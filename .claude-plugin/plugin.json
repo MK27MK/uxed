@@ -2,8 +2,8 @@
   "name": "uxed",
   "version": "0.1.0",
   "author": { "name": "Mattia Carella" },
-  "description": "Design and change UI components through an interactive mock, then implement them test-first",
+  "description": "Design and change UI through an interactive shell, over a mock or the running app, then implement it test-first",
   "homepage": "https://github.com/MK27MK/uxed",
   "repository": "https://github.com/MK27MK/uxed",
-  "keywords": ["ui", "mock", "design", "components", "tdd"]
+  "keywords": ["ui", "mock", "design", "components", "tdd", "inspector"]
 }

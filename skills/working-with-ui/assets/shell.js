@@ -1,7 +1,22 @@
-(() => {
+(async () => {
+  if (window.__uxedShell) return;
+  window.__uxedShell = true;
+  // serve.mjs --app injects this script into the running app with data-mode="app".
+  const isApp = document.currentScript?.dataset.mode === "app";
+  if (isApp && document.readyState !== "complete") await new Promise((resolve) => addEventListener("load", resolve, { once: true }));
+
   const NOTES_URL = "/__mock/notes";
   const EVENTS_URL = "/__mock/events";
+  const CLASSES_URL = "/__mock/classes";
   const MODE_KEY = "mk-mode";
+  const FOCUS_KEY = "mk-focus";
+  const REFRESH_DELAY_MS = 100;
+  // CSS-module class names as bundlers emit them in development: [stem, local] or [local].
+  const MODULE_CLASS_PATTERNS = [
+    /^(.+?)-module__(?:[^_]|_(?!_))+__(.+)$/, // Turbopack: bottom-bar-module__hOh1mW__bottomBar
+    /^([^_]+)_(.+)__[\w-]{5}$/, // webpack (Next): bottom-bar_bottomBar__hOh1m
+  ];
+  const VITE_MODULE_CLASS = /^_(.+)_[a-z0-9]{5}_\d+$/; // Vite: _bottomBar_x1y2z_12
   const PANEL_WIDTH_PX = 320;
   const AUTOSAVE_DELAY_MS = 600;
   const TOAST_MS = 2400;
@@ -44,39 +59,55 @@
   const SMALL_STEP_FACTOR = 0.1;
   const SCRUB_PX_PER_STEP = 2;
   const COLOR_FORMATS = ["hex", "rgb", "hsl"];
-  const NAME_PATTERN = /^[A-Za-z_][\w-]*$/;
+  const NAME_PATTERN = isApp ? /^[A-Za-z_][\w-]*(\.[A-Za-z_][\w-]*)?$/ : /^[A-Za-z_][\w-]*$/;
 
   const ICON_CURSOR =
     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 2.5l9 4.2-4 1.3-1.3 4z"/></svg>';
   const ICON_TARGET =
     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/></svg>';
 
+  const ICON_FOCUS =
+    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3"/><rect x="5.5" y="5.5" width="5" height="5" rx="1"/></svg>';
   const ICON_DISK =
     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 2.5h9l2 2v9h-11z"/><path d="M5 2.5v3h5v-3"/><path d="M4.5 13.5V9.5h7v4"/></svg>';
 
   const SHELL_CSS = `
+    :host { all: initial; display: contents; }
     .mk-chrome, .mk-chrome * { box-sizing: border-box; font: 12px/1.4 system-ui, -apple-system, sans-serif; }
     .mk-chrome button, .mk-chrome textarea, .mk-chrome input { color: inherit; }
-    .mk-bar { position: fixed; z-index: 2147483000; top: 12px; display: flex; gap: 2px; padding: 3px; border: 1px solid #383838; border-radius: 10px; background: #1e1e1e; color: #e5e5e5; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
-    .mk-modes { left: 50%; transform: translateX(-50%); }
+    .mk-chrome[hidden] { display: none !important; }
+    .mk-layer { position: fixed; z-index: 2147483647; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; overflow: visible; border: 0; background: none; color: inherit; pointer-events: none; }
+    .mk-layer > * { pointer-events: auto; }
+    .mk-layer > .mk-box { pointer-events: none; }
+    .mk-glass { border: 1px solid rgb(255 255 255 / 0.12); background: rgb(30 30 30 / 0.62); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); color: #e5e5e5; box-shadow: 0 8px 28px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.08); }
+    .mk-bar { position: fixed; z-index: 2147483647; top: 12px; display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; }
+    .mk-modes { left: 50%; transform: translateX(-50%); gap: 4px; transition: left 120ms; }
+    :host(.mk-has-panel) .mk-modes { left: calc((100% - ${PANEL_WIDTH_PX}px) / 2); }
+    .mk-segment { position: relative; display: flex; padding: 2px; border-radius: 999px; background: rgb(255 255 255 / 0.07); }
+    .mk-thumb { position: absolute; top: 2px; left: 2px; width: 32px; height: 32px; border-radius: 999px; background: #0d99ff; box-shadow: 0 2px 6px rgb(13 153 255 / 0.45); transition: transform 220ms cubic-bezier(0.3, 0.7, 0.2, 1); }
+    .mk-segment[data-mode="inspect"] .mk-thumb { transform: translateX(32px); }
+    .mk-bar .mk-segment button { position: relative; width: 32px; min-width: 32px; padding: 0; background: transparent; color: #a0a0a0; transition: color 220ms; }
+    .mk-bar .mk-segment button:hover { background: transparent; color: #e5e5e5; }
+    .mk-bar .mk-segment button[aria-pressed="true"] { background: transparent; color: #fff; }
+    .mk-sep { width: 1px; height: 20px; margin: 0 2px; background: rgb(255 255 255 / 0.14); }
+    @media (prefers-reduced-motion: reduce) { .mk-thumb, .mk-bar .mk-segment button { transition: none; } }
     .mk-title { left: 12px; align-items: center; }
-    .mk-title h1 { margin: 0; padding: 4px 8px; border-radius: 6px; font: 600 13px/1.4 ui-monospace, monospace; outline: none; cursor: text; }
-    .mk-title h1:hover { background: #2c2c2c; }
-    .mk-title h1:focus { background: #2c2c2c; box-shadow: inset 0 0 0 1px #0d99ff; }
+    .mk-title h1 { margin: 0; padding: 4px 10px; border-radius: 999px; font: 600 13px/1.4 ui-monospace, monospace; outline: none; cursor: text; }
+    .mk-title h1:hover { background: rgb(255 255 255 / 0.08); }
+    .mk-title h1:focus { background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px #0d99ff; }
     .mk-save { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: #a0a0a0; }
     .mk-save[data-state="saving"] { color: #0d99ff; animation: mk-pulse 0.8s ease-in-out infinite alternate; }
     .mk-save[data-state="error"] { color: #ff8a80; }
     @keyframes mk-pulse { to { opacity: 0.35; } }
     .mk-assumptions { right: 12px; align-items: center; transition: right 120ms; }
-    html.mk-has-panel .mk-assumptions { right: ${PANEL_WIDTH_PX + 12}px; }
+    :host(.mk-has-panel) .mk-assumptions { right: ${PANEL_WIDTH_PX + 12}px; }
+    .mk-title .mk-app { padding: 4px 10px; font: 600 13px/1.4 ui-monospace, monospace; }
     .mk-help { top: auto; bottom: 12px; left: 12px; }
     .mk-help button { font-weight: 700; }
-    .mk-help-card { position: fixed; z-index: 2147483000; left: 12px; bottom: 60px; width: 300px; padding: 12px 12px 12px 28px; border: 1px solid #383838; border-radius: 10px; background: #1e1e1e; color: #e5e5e5; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
+    .mk-help-card { position: fixed; z-index: 2147483647; left: 12px; bottom: 60px; width: 300px; padding: 14px 16px 14px 32px; border-radius: 22px; }
     .mk-help-card ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; }
     .mk-assumptions .mk-count { gap: 6px; }
     .mk-dot { width: 8px; height: 8px; border-radius: 50%; background: #f2a63b; }
-    .mk-assumptions[data-empty="true"] .mk-dot { background: #3fb950; }
-    .mk-bar button:disabled { opacity: 0.4; cursor: default; background: transparent; }
     .mk-rules { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
     .mk-rule { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: 6px; padding: 4px; border-radius: 6px; }
     .mk-rule[data-current="true"] { background: #2c2c2c; }
@@ -84,26 +115,30 @@
     .mk-rule[data-source="assumption"] .mk-badge { background: #f2a63b; }
     .mk-panel .mk-rule textarea { min-height: 26px; field-sizing: content; resize: none; font-family: inherit; font-size: 12px; }
     .mk-rule[data-source="assumption"] textarea { border-color: #6b4e1f; }
+    .mk-rule[data-change="true"] { box-shadow: inset 2px 0 0 #0d99ff; }
+    .mk-rule[data-removed="true"] textarea { text-decoration: line-through; opacity: 0.6; }
+    .mk-actions { display: flex; align-items: center; gap: 12px; }
     .mk-rule-actions { display: flex; gap: 2px; margin-top: 3px; }
     .mk-panel .mk-confirm { color: #3fb950; font-weight: 700; opacity: 1; }
     .mk-panel .mk-add { align-self: flex-start; padding: 2px 4px; border: 0; background: none; color: #0d99ff; cursor: pointer; }
-    .mk-bar button { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; cursor: pointer; }
-    .mk-bar button:hover { background: #2c2c2c; }
+    .mk-bar button { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
+    .mk-bar button:hover { background: rgb(255 255 255 / 0.1); }
     .mk-bar button[aria-pressed="true"] { background: #0d99ff; color: #fff; }
-    .mk-box { position: fixed; z-index: 2147482990; pointer-events: none; display: none; border: 1px solid #0d99ff; }
+    .mk-box { position: fixed; z-index: 2147483646; pointer-events: none; display: none; border: 1px solid #0d99ff; }
     .mk-box[data-kind="selected"] { border-width: 2px; }
     .mk-box span { position: absolute; top: -20px; left: -1px; padding: 1px 6px; border-radius: 4px 4px 4px 0; background: #0d99ff; color: #fff; white-space: nowrap; font-size: 11px; }
-    html.mk-inspect [data-mock-root] [data-ui] { outline: 1px dashed rgb(13 153 255 / 0.35); outline-offset: 1px; }
-    html.mk-inspect [data-mock-root] [data-mk-open] { outline: 1px dashed #f2a63b; }
-    html.mk-inspect [data-mock-root], html.mk-inspect [data-mock-root] * { cursor: default !important; }
-    html.mk-has-panel body { margin-right: ${PANEL_WIDTH_PX}px; }
-    .mk-panel { position: fixed; z-index: 2147483000; top: 0; right: 0; bottom: 0; width: ${PANEL_WIDTH_PX}px; overflow-y: auto; border-left: 1px solid #383838; background: #1e1e1e; color: #e5e5e5; }
+    .mk-panel { position: fixed; z-index: 2147483647; top: 0; right: 0; bottom: 0; width: ${PANEL_WIDTH_PX}px; overflow-y: auto; border-left: 1px solid #383838; background: #1e1e1e; color: #e5e5e5; }
     .mk-panel header { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid #383838; }
     .mk-panel header .mk-name { flex: 1; min-width: 0; padding: 4px 6px; border-color: transparent; background: transparent; font-size: 12px; font-weight: 600; }
     .mk-panel header .mk-name:hover { border-color: #383838; }
     .mk-panel header button { margin-left: auto; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
     .mk-panel header button:hover { background: #2c2c2c; }
     .mk-panel section { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-bottom: 1px solid #2c2c2c; }
+    .mk-head { position: relative; display: flex; align-items: center; gap: 6px; }
+    .mk-hint { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; padding: 0; border: 1px solid #5a5a5a; border-radius: 50%; background: none; color: #a0a0a0; font-size: 9px; font-weight: 700; line-height: 1; cursor: help; }
+    .mk-hint:hover, .mk-hint:focus-visible { border-color: #0d99ff; color: #0d99ff; outline: none; }
+    .mk-tip { position: absolute; z-index: 1; top: calc(100% + 6px); left: 0; right: 0; padding: 8px 10px; border-radius: 12px; background: #2c2c2c; box-shadow: 0 6px 20px rgb(0 0 0 / 0.4); color: #e5e5e5; visibility: hidden; opacity: 0; transition: opacity 120ms; }
+    .mk-hint:hover + .mk-tip, .mk-hint:focus-visible + .mk-tip { visibility: visible; opacity: 1; }
     .mk-panel h3 { margin: 0; color: #a0a0a0; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
     .mk-panel textarea, .mk-panel input { width: 100%; padding: 6px 8px; border: 1px solid #383838; border-radius: 6px; background: #2c2c2c; font-family: ui-monospace, monospace; font-size: 11px; resize: vertical; }
     .mk-panel textarea:focus, .mk-panel input:focus { outline: 1px solid #0d99ff; border-color: #0d99ff; }
@@ -136,14 +171,19 @@
     .mk-comment p { margin: 0; white-space: pre-wrap; }
     .mk-panel .mk-link { padding: 0; border: 0; background: none; color: #0d99ff; cursor: pointer; }
     .mk-panel .mk-primary { align-self: flex-end; padding: 6px 12px; border: 0; border-radius: 6px; background: #0d99ff; color: #fff; cursor: pointer; }
-    .mk-toast { position: fixed; z-index: 2147483001; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: #e5e5e5; color: #1e1e1e; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
+    .mk-toast { position: fixed; z-index: 2147483647; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; }
   `;
 
-  const root = document.querySelector("[data-mock-root]");
+  const root = isApp ? document.body : document.querySelector("[data-mock-root]");
   if (!root) {
     console.error("mock shell: add data-mock-root to the element that wraps the component");
     return;
   }
+  const ROOT_SELECTOR = isApp ? "body" : "[data-mock-root]";
+  // The shell's chrome lives in a shadow root, so the app's styles and handlers never reach it.
+  const host = document.createElement("uxed-shell");
+  const shadow = host.attachShadow({ mode: "open" });
+  const isChrome = (node) => node === host;
 
   let notes = { elements: {}, edits: {}, renames: {} };
   let mode = "preview";
@@ -165,10 +205,119 @@
     return el;
   }
 
-  const instancesOf = (id) => [...root.querySelectorAll(`[data-ui="${CSS.escape(id)}"]`)];
+  let plainClasses = new Set();
+
+  function moduleName(cls) {
+    for (const pattern of MODULE_CLASS_PATTERNS) {
+      const match = pattern.exec(cls);
+      if (match) return `${match[1]}.${match[2]}`;
+    }
+    return VITE_MODULE_CLASS.exec(cls)?.[1] ?? null;
+  }
+
+  // The element's name in code and a selector for it: its data-ui name, and in the app also its
+  // CSS-module class (`stem.local`) or a class that the project's own stylesheets define.
+  function codeNameOf(el) {
+    const ui = el.getAttribute("data-ui");
+    if (ui) return { name: ui, selector: `[data-ui="${CSS.escape(ui)}"]` };
+    if (!isApp) return null;
+    const classes = [...el.classList];
+    for (const cls of classes) {
+      const name = moduleName(cls);
+      if (name) return { name, selector: `.${CSS.escape(cls)}` };
+    }
+    const plain = classes.find((cls) => plainClasses.has(cls));
+    return plain ? { name: plain, selector: `.${CSS.escape(plain)}` } : null;
+  }
+
+  const CANDIDATES = isApp ? "[data-ui], [class]" : "[data-ui]";
+  const renamed = (name) => notes.renames[name] ?? name;
+  const nameOf = (el) => {
+    const code = codeNameOf(el);
+    return code ? renamed(code.name) : null;
+  };
+  const instancesOf = (id) => [...root.querySelectorAll(CANDIDATES)].filter((el) => nameOf(el) === id);
   const uiElementAt = (target) => {
-    const el = target instanceof Element ? target.closest("[data-ui]") : null;
-    return el && root.contains(el) ? el : null;
+    for (let el = target instanceof Element ? target : null; el && root.contains(el); el = el.parentElement) {
+      if (isChrome(el)) return null;
+      if (nameOf(el)) return el;
+    }
+    return null;
+  };
+
+  // Selectors of every named element on the page, by name. Rebuilt as the page changes.
+  let registry = new Map();
+  function scan() {
+    const next = new Map();
+    for (const el of root.querySelectorAll(CANDIDATES)) {
+      const code = codeNameOf(el);
+      if (!code) continue;
+      const id = renamed(code.name);
+      if (!next.has(id)) next.set(id, new Set());
+      next.get(id).add(code.selector);
+    }
+    registry = next;
+  }
+
+  const within = (selectors) => `${ROOT_SELECTOR} :is(${[...selectors].join(", ")})`;
+
+  // Outlines, open comments and style edits are one generated stylesheet, so they survive
+  // the app re-rendering its elements and never write to the app's DOM.
+  const pageStyle = document.createElement("style");
+  let pageCss = "";
+  function renderPageStyle() {
+    const rules = [
+      `html.mk-inspect ${ROOT_SELECTOR}, html.mk-inspect ${ROOT_SELECTOR} * { cursor: default !important; }`,
+      `html.mk-has-panel body { margin-right: ${PANEL_WIDTH_PX}px !important; }`,
+      "html.mk-focus, html.mk-focus body { overflow: hidden !important; }",
+      "html.mk-focus body, html.mk-focus body :not(uxed-shell, [data-mk-focus], [data-mk-focus] *) { visibility: hidden !important; }",
+      "html.mk-focus [data-mk-focus] { visibility: visible !important; }",
+      "html.mk-focus body > :not(uxed-shell) { translate: var(--mk-dx, 0px) var(--mk-dy, 0px) !important; }",
+    ];
+    const open = Object.entries(notes.elements)
+      .filter(([id, note]) => registry.has(id) && note.comments?.some((c) => !c.resolved))
+      .flatMap(([id]) => [...registry.get(id)]);
+    if (open.length > 0) rules.push(`html.mk-inspect ${within(open)} { outline: 1px dashed #f2a63b; }`);
+    for (const [id, edit] of Object.entries(notes.edits)) {
+      const declarations = Object.entries(edit.style ?? {}).map(([prop, value]) => `${prop}: ${value} !important;`).join(" ");
+      if (declarations && registry.has(id)) rules.push(`${within(registry.get(id))} { ${declarations} }`);
+    }
+    const css = rules.join("\n");
+    if (css !== pageCss) pageStyle.textContent = pageCss = css;
+  }
+
+  function setText(el, text) {
+    const [only, ...rest] = el.childNodes;
+    if (only?.nodeType === Node.TEXT_NODE && rest.length === 0) only.nodeValue = text;
+    else el.textContent = text;
+  }
+
+  function applyTextEdits() {
+    for (const [id, edit] of Object.entries(notes.edits)) {
+      const entries = Object.entries(edit.text ?? {});
+      if (entries.length === 0) continue;
+      const instances = instancesOf(id);
+      for (const [nth, text] of entries) {
+        if (instances[nth] && instances[nth].textContent !== text) setText(instances[nth], text);
+      }
+    }
+  }
+
+  function refresh() {
+    scan();
+    renderPageStyle();
+    applyTextEdits();
+    if (selected && !selected.el?.isConnected) selected = { ...selected, el: visibleInstance(selected.id) };
+    refreshFocus();
+    reposition();
+  }
+
+  let refreshTimer = null;
+  const scheduleRefresh = () => {
+    refreshTimer ??= setTimeout(() => {
+      refreshTimer = null;
+      refresh();
+    }, REFRESH_DELAY_MS);
   };
 
   const elementNote = (id) => notes.elements[id] ?? { behaviour: [], comments: [] };
@@ -180,12 +329,8 @@
     notes = { ...notes, edits: { ...notes.edits, [id]: { ...elementEdit(id), ...patch } } };
   };
 
-  function applyRenames() {
-    const targets = Object.entries(notes.renames).map(([from, to]) => [instancesOf(from), to]);
+  function applyRootRename() {
     const componentName = notes.renames[root.dataset.mockRoot];
-    for (const [instances, to] of targets) {
-      for (const el of instances) el.dataset.ui = to;
-    }
     if (componentName) root.dataset.mockRoot = componentName;
   }
 
@@ -213,8 +358,9 @@
       edits: renameKey(notes.edits, from, to),
       renames: original === to ? renames : { ...renames, [original]: to },
     };
-    for (const el of instancesOf(from)) el.dataset.ui = to;
     if (root.dataset.mockRoot === from) root.dataset.mockRoot = to;
+    if (focus?.id === from) focus = { ...focus, id: to };
+    refresh();
     if (currentAssumption?.id === from) currentAssumption = { ...currentAssumption, id: to };
     scheduleAutosave();
     renderAssumptionNav();
@@ -223,27 +369,7 @@
     return true;
   }
 
-  function applyEdits() {
-    for (const [id, edit] of Object.entries(notes.edits)) {
-      const instances = instancesOf(id);
-      for (const el of instances) {
-        for (const [prop, value] of Object.entries(edit.style ?? {})) el.style.setProperty(prop, value);
-      }
-      for (const [nth, text] of Object.entries(edit.text ?? {})) {
-        if (instances[nth]) instances[nth].textContent = text;
-      }
-    }
-  }
-
-  function markOpenComments() {
-    for (const el of root.querySelectorAll("[data-mk-open]")) el.removeAttribute("data-mk-open");
-    for (const [id, note] of Object.entries(notes.elements)) {
-      if (!note.comments?.some((c) => !c.resolved)) continue;
-      for (const el of instancesOf(id)) el.setAttribute("data-mk-open", "");
-    }
-  }
-
-  const toastEl = h("div", { class: "mk-toast mk-chrome", role: "status" });
+  const toastEl = h("div", { class: "mk-toast mk-glass mk-chrome", role: "status" });
   let toastTimer = null;
   function toast(message) {
     toastEl.textContent = message;
@@ -315,15 +441,16 @@
       const response = await fetch(NOTES_URL);
       if (!response.ok) throw new Error(`${response.status} ${await response.text()}`);
       const data = await response.json();
-      notes = { elements: data.elements ?? {}, edits: data.edits ?? {}, renames: data.renames ?? {} };
-      applyRenames();
+      notes = { ...data, elements: data.elements ?? {}, edits: data.edits ?? {}, renames: data.renames ?? {} };
+      if (isApp) plainClasses = new Set(await (await fetch(CLASSES_URL)).json());
+      applyRootRename();
       renderTitle();
-      applyEdits();
-      markOpenComments();
+      refresh();
+      restoreFocus();
       renderAssumptionNav();
     } catch (error) {
       setStatus("error", "Not connected");
-      toast(`Could not load notes (${error.message}). Open the mock through serve.mjs.`);
+      toast(`Could not load notes (${error.message}). Open the page through serve.mjs.`);
     }
   }
 
@@ -344,6 +471,12 @@
     }),
   };
 
+  const modeSegment = h("div", { class: "mk-segment", role: "group", "aria-label": "Mode" }, [
+    h("span", { class: "mk-thumb", "aria-hidden": "true" }),
+    modeButtons.preview,
+    modeButtons.inspect,
+  ]);
+
   const hoverBox = h("div", { class: "mk-box mk-chrome", "data-kind": "hover" }, [h("span")]);
   const selectBox = h("div", { class: "mk-box mk-chrome", "data-kind": "selected" }, [h("span")]);
   const panel = h("aside", { class: "mk-panel mk-chrome", "aria-label": "Element inspector" });
@@ -362,7 +495,7 @@
       width: `${rect.width}px`,
       height: `${rect.height}px`,
     });
-    box.firstChild.textContent = el.dataset.ui;
+    box.firstChild.textContent = nameOf(el);
   }
 
   function setMode(next) {
@@ -372,12 +505,13 @@
     } catch {}
     document.documentElement.classList.toggle("mk-inspect", mode === "inspect");
     for (const [name, button] of Object.entries(modeButtons)) button.setAttribute("aria-pressed", String(name === mode));
+    modeSegment.dataset.mode = mode;
     if (mode === "preview") select(null);
     placeBox(hoverBox, null);
   }
 
   function select(el) {
-    selected = el ? { id: el.dataset.ui, el } : null;
+    selected = el ? { id: nameOf(el), el } : null;
     placeBox(hoverBox, null);
     renderPanel();
     requestAnimationFrame(() => placeBox(selectBox, selected?.el));
@@ -395,8 +529,16 @@
     requestAnimationFrame(() => placeBox(selectBox, el));
   }
 
-  function section(title, children) {
-    return h("section", {}, [h("h3", { text: title }), ...children]);
+  function section(title, children, hint) {
+    const heading = h("h3", { text: title });
+    const head = hint
+      ? h("div", { class: "mk-head" }, [
+          heading,
+          h("button", { type: "button", class: "mk-hint", "aria-label": `About ${title}`, "aria-describedby": "mk-tip", text: "?" }),
+          h("div", { class: "mk-tip", id: "mk-tip", role: "tooltip", text: hint }),
+        ])
+      : heading;
+    return h("section", {}, [head, ...children]);
   }
 
   const rulesOf = (id) => elementNote(id).behaviour ?? [];
@@ -414,19 +556,35 @@
     field?.scrollIntoView({ block: "nearest" });
   }
 
+  // In the app, a rule marked current is one the code already follows. Editing it turns it
+  // into a change; deleting it marks it removed, so the agent knows to take the behaviour out.
+  const asChange = ({ current: _current, ...rule }) => rule;
+  const restored = ({ removed: _removed, ...rule }) => rule;
+
   function ruleView(id, rule, index) {
     const isAssumption = rule.source === "assumption";
     const isCurrent = currentAssumption?.id === id && currentAssumption.index === index;
+    const isChange = isApp && !rule.current;
+    const item = h("li", {
+      class: "mk-rule",
+      "data-rule": String(index),
+      "data-source": rule.source,
+      "data-current": String(isCurrent),
+      "data-change": String(isChange),
+      "data-removed": String(Boolean(rule.removed)),
+    });
     const text = h("textarea", {
       rows: "1",
       "aria-label": `Rule ${index + 1}`,
       placeholder: "On click, …",
       oninput: (event) => {
-        const behaviour = rulesOf(id).map((r, i) => (i === index ? { ...r, text: event.target.value } : r));
+        const behaviour = rulesOf(id).map((r, i) => (i === index ? asChange({ ...r, text: event.target.value }) : r));
         setRules(id, behaviour, { rerender: false });
+        item.dataset.change = String(isApp);
       },
     });
     text.value = rule.text;
+    text.disabled = Boolean(rule.removed);
     const confirm = h("button", {
       type: "button",
       class: "mk-icon mk-confirm",
@@ -439,19 +597,31 @@
       type: "button",
       class: "mk-icon",
       "aria-label": `Delete rule ${index + 1}`,
-      title: "Delete rule",
+      title: rule.current ? "Remove: the code should stop doing this" : "Delete rule",
       text: "🗑️",
-      onclick: () => setRules(id, rulesOf(id).filter((_, i) => i !== index)),
+      onclick: () => setRules(id, rule.current
+        ? rulesOf(id).map((r, i) => (i === index ? { ...r, removed: true } : r))
+        : rulesOf(id).filter((_, i) => i !== index)),
     });
-    return h("li", { class: "mk-rule", "data-rule": String(index), "data-source": rule.source, "data-current": String(isCurrent) }, [
+    const restore = h("button", {
+      type: "button",
+      class: "mk-icon",
+      "aria-label": `Restore rule ${index + 1}`,
+      title: "Restore: keep this behaviour",
+      text: "↺",
+      onclick: () => setRules(id, rulesOf(id).map((r, i) => (i === index ? restored(r) : r))),
+    });
+    const actions = rule.removed ? [restore] : [...(isAssumption ? [confirm] : []), remove];
+    item.append(
       h("span", {
         class: "mk-badge",
         title: isAssumption ? "Assumption: not settled by the spec" : "From the spec",
         text: String(index + 1),
       }),
       text,
-      h("div", { class: "mk-rule-actions" }, [...(isAssumption ? [confirm] : []), remove]),
-    ]);
+      h("div", { class: "mk-rule-actions" }, actions),
+    );
+    return item;
   }
 
   function behaviourSection(id) {
@@ -465,16 +635,23 @@
         focusRule(rules.length);
       },
     });
-    return section("Behaviour", [h("ol", { class: "mk-rules" }, rules.map((rule, index) => ruleView(id, rule, index))), add]);
+    return section("Behaviour", [
+      h("ol", { class: "mk-rules" }, rules.map((rule, index) => ruleView(id, rule, index))),
+      h("div", { class: "mk-actions" }, [add]),
+    ], BEHAVIOUR_HINT);
   }
+
+  const BEHAVIOUR_HINT = isApp
+    ? "The code and its tests already define what this element does, so the list holds only what you want different. Each rule you add, edit or delete is a change the agent implements test-first; once done it stays here as current behaviour."
+    : "Generated by the agent from the spec and the sketch: what the component does, as ordered rules. Green rules come from the spec, yellow ones are assumptions to confirm. Edit, add or delete rules to change the behaviour.";
 
   let currentAssumption = null;
   const assumptionCount = h("span");
-  const assumptionNav = h("div", { class: "mk-bar mk-assumptions mk-chrome", role: "toolbar", "aria-label": "Assumptions" });
+  const assumptionNav = h("div", { class: "mk-bar mk-assumptions mk-glass mk-chrome", role: "toolbar", "aria-label": "Assumptions" });
 
   function assumptions() {
     return Object.entries(notes.elements).flatMap(([id, note], order) =>
-      (note.behaviour ?? []).flatMap((rule, index) => (rule.source === "assumption" ? [{ id, index, order }] : [])));
+      (note.behaviour ?? []).flatMap((rule, index) => (rule.source === "assumption" && !rule.removed ? [{ id, index, order }] : [])));
   }
 
   function positionOf({ id, index }) {
@@ -501,11 +678,8 @@
   function renderAssumptionNav() {
     const list = assumptions();
     const at = list.findIndex((item) => item.id === currentAssumption?.id && item.index === currentAssumption.index);
-    assumptionNav.dataset.empty = String(list.length === 0);
-    assumptionCount.textContent = list.length === 0
-      ? "No assumptions"
-      : `${at >= 0 ? `${at + 1}/` : ""}${list.length} assumption${list.length === 1 ? "" : "s"}`;
-    for (const button of assumptionNav.querySelectorAll("button")) button.disabled = list.length === 0;
+    assumptionNav.hidden = list.length === 0;
+    assumptionCount.textContent = `${at >= 0 ? `${at + 1}/` : ""}${list.length} assumption${list.length === 1 ? "" : "s"}`;
   }
 
   assumptionNav.append(
@@ -524,13 +698,13 @@
       const comments = elementNote(id).comments.map((c, i) => (i === index ? { ...c, resolved: !c.resolved } : c));
       updateNote(id, { comments });
       scheduleAutosave();
-      markOpenComments();
+      renderPageStyle();
       renderPanel();
     };
     const remove = () => {
       updateNote(id, { comments: elementNote(id).comments.filter((_, i) => i !== index) });
       scheduleAutosave();
-      markOpenComments();
+      renderPageStyle();
       renderPanel();
     };
     return h("div", { class: "mk-comment", "data-resolved": String(Boolean(comment.resolved)) }, [
@@ -552,7 +726,7 @@
       const comment = { author: "user", text, at: new Date().toISOString(), resolved: false };
       updateNote(id, { comments: [...elementNote(id).comments, comment] });
       scheduleAutosave();
-      markOpenComments();
+      renderPageStyle();
       renderPanel();
     };
     input.addEventListener("keydown", (event) => {
@@ -573,7 +747,7 @@
       rows: "2",
       "aria-label": "Text",
       oninput: (event) => {
-        el.textContent = event.target.value;
+        setText(el, event.target.value);
         const edit = elementEdit(id);
         updateEdit(id, { text: { ...edit.text, [nth]: event.target.value } });
         scheduleAutosave();
@@ -587,11 +761,8 @@
   function setStyle(id, prop, value) {
     const { [prop]: _previous, ...rest } = elementEdit(id).style;
     const style = value ? { ...rest, [prop]: value } : rest;
-    for (const instance of instancesOf(id)) {
-      if (value) instance.style.setProperty(prop, value);
-      else instance.style.removeProperty(prop);
-    }
     updateEdit(id, { style });
+    renderPageStyle();
     scheduleAutosave();
     placeBox(selectBox, selected?.el);
   }
@@ -785,6 +956,8 @@
     const isOpen = Boolean(selected);
     panel.hidden = !isOpen;
     document.documentElement.classList.toggle("mk-has-panel", isOpen);
+    host.classList.toggle("mk-has-panel", isOpen);
+    refreshFocus();
     if (!isOpen) {
       panel.replaceChildren();
       placeBox(selectBox, null);
@@ -820,7 +993,7 @@
   }
 
   const blockInInspect = (event) => {
-    if (mode !== "inspect" || !root.contains(event.target)) return false;
+    if (mode !== "inspect" || !root.contains(event.target) || isChrome(event.target)) return false;
     event.preventDefault();
     event.stopImmediatePropagation();
     return true;
@@ -863,22 +1036,85 @@
     if (mode === "inspect") placeBox(hoverBox, uiElementAt(event.target));
   });
 
-  const reposition = () => {
+  function reposition() {
     placeBox(selectBox, selected?.el);
     placeBox(hoverBox, null);
-  };
+  }
   window.addEventListener("scroll", reposition, true);
-  window.addEventListener("resize", reposition);
+  window.addEventListener("resize", () => {
+    refreshFocus();
+    reposition();
+  });
+
+  // Focus mode hides everything but one element and pans the page so that it sits centred.
+  let focus = null;
+  const focusStyle = document.createElement("style");
+  const focusButton = h("button", {
+    type: "button",
+    "aria-label": "Focus: show only the selected element",
+    title: "Focus",
+    html: ICON_FOCUS,
+    onclick: () => {
+      if (focus) return setFocus(null);
+      if (!selected?.el) return toast("Pick an element with the crosshair first.");
+      setFocus({ id: selected.id, nth: instancesOf(selected.id).indexOf(selected.el) });
+    },
+  });
+
+  const focusedElement = () => {
+    const list = instancesOf(focus.id);
+    return list[focus.nth] ?? list.find((el) => el.getClientRects().length > 0) ?? null;
+  };
+
+  function setFocus(next) {
+    focus = next;
+    try {
+      if (focus) sessionStorage.setItem(FOCUS_KEY, JSON.stringify(focus));
+      else sessionStorage.removeItem(FOCUS_KEY);
+    } catch {}
+    focusButton.setAttribute("aria-pressed", String(Boolean(focus)));
+    document.documentElement.classList.toggle("mk-focus", Boolean(focus));
+    refreshFocus();
+    reposition();
+  }
+
+  function restoreFocus() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(FOCUS_KEY) ?? "null");
+      if (saved?.id) setFocus(saved);
+    } catch {}
+  }
+
+  function refreshFocus() {
+    const el = focus ? focusedElement() : null;
+    const marked = root.querySelector("[data-mk-focus]");
+    if (marked !== el) {
+      marked?.removeAttribute("data-mk-focus");
+      el?.setAttribute("data-mk-focus", "");
+    }
+    focusStyle.textContent = "";
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const width = window.innerWidth - (selected ? PANEL_WIDTH_PX : 0);
+    const dx = Math.round(width / 2 - (rect.left + rect.width / 2));
+    const dy = Math.round(window.innerHeight / 2 - (rect.top + rect.height / 2));
+    focusStyle.textContent = `html.mk-focus { --mk-dx: ${dx}px; --mk-dy: ${dy}px; }`;
+  }
 
   const HELP_ITEMS = [
-    "Cursor: interact with the component.",
+    `Cursor: interact with the ${isApp ? "app" : "component"}.`,
     "Crosshair: pick an element. In the panel, rename it, edit, add or delete its behaviour rules, comment on it, or edit its text and style.",
+    "Focus (the framed square): show only the selected element, centred. Click it again or press Esc to show everything.",
+    ...(isApp
+      ? [
+          "Rules you add or edit are changes, marked blue. Deleting a rule the code already follows marks it for removal; ↺ restores it.",
+        ]
+      : ["Click the component name at the top left to rename it."]),
     "Yellow rules are assumptions. Confirm one with ✓ to turn it into spec (green).",
-    "The counter at the top right jumps between assumptions.",
-    "Click the component name at the top left to rename it.",
+    "While there are assumptions, the counter at the top right jumps between them.",
     "Every change applies live and saves automatically: the disk next to the name pulses while saving and turns red if saving fails. Esc closes the panel.",
   ];
-  const helpCard = h("div", { class: "mk-help-card mk-chrome", id: "mk-help", role: "dialog", "aria-label": "How to use this mock" }, [
+  const helpCard = h("div", { class: "mk-help-card mk-glass mk-chrome", id: "mk-help", role: "dialog", "aria-label": "How to use this mock" }, [
     h("ul", {}, HELP_ITEMS.map((text) => h("li", { text }))),
   ]);
   const helpButton = h("button", {
@@ -896,32 +1132,69 @@
   }
   setHelpOpen(false);
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
+  function onEscape() {
     if (!helpCard.hidden) setHelpOpen(false);
     else if (selected) select(null);
+    else if (focus) setFocus(null);
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !isChrome(event.target)) onEscape();
   });
+
+  // Keep the chrome's events away from the app's own handlers, such as global shortcuts.
+  for (const type of [
+    "keydown", "keyup", "keypress", "pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick",
+    "contextmenu", "wheel", "input", "change", "copy", "cut", "paste",
+  ]) {
+    host.addEventListener(type, (event) => {
+      if (type === "keydown" && event.key === "Escape") onEscape();
+      event.stopPropagation();
+    });
+  }
+  for (const type of ["focusin", "focusout"]) {
+    window.addEventListener(
+      type,
+      (event) => {
+        if (isChrome(event.target) || isChrome(event.relatedTarget)) event.stopImmediatePropagation();
+      },
+      true,
+    );
+  }
 
   window.addEventListener("beforeunload", (event) => {
     if (revision !== savedRevision) event.preventDefault();
   });
 
-  const style = h("style", { text: SHELL_CSS });
-  document.head.append(style);
-  document.body.append(
-    h("div", { class: "mk-bar mk-modes mk-chrome", role: "toolbar", "aria-label": "Mock mode" }, [
-      modeButtons.preview,
-      modeButtons.inspect,
+  const titleChildren = isApp
+    ? [h("span", { class: "mk-app", text: "App" }), statusEl]
+    : root.dataset.mockRoot ? [titleEl, statusEl] : [statusEl];
+  document.head.append(pageStyle, focusStyle);
+  // The chrome sits in the top layer, above anything the app stacks with z-index.
+  const layer = h("div", { class: "mk-layer", popover: "manual" }, [
+    h("div", { class: "mk-bar mk-modes mk-glass mk-chrome", role: "toolbar", "aria-label": "Mock mode" }, [
+      modeSegment,
+      h("span", { class: "mk-sep", "aria-hidden": "true" }),
+      focusButton,
     ]),
-    h("div", { class: "mk-bar mk-title mk-chrome" }, root.dataset.mockRoot ? [titleEl, statusEl] : [statusEl]),
+    h("div", { class: "mk-bar mk-title mk-glass mk-chrome" }, titleChildren),
     assumptionNav,
-    h("div", { class: "mk-bar mk-help mk-chrome" }, [helpButton]),
+    h("div", { class: "mk-bar mk-help mk-glass mk-chrome" }, [helpButton]),
     helpCard,
     hoverBox,
     selectBox,
     panel,
     toastEl,
-  );
+  ]);
+  shadow.append(h("style", { text: SHELL_CSS }), layer);
+  document.body.append(host);
+  layer.showPopover?.();
+  new MutationObserver(scheduleRefresh).observe(root, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["class", "data-ui"],
+  });
 
   function savedMode() {
     try {
