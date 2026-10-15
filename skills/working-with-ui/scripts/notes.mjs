@@ -3,7 +3,7 @@ import { readFile, rename, writeFile } from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { bakeStyle, locate, styleIndex } from "./project.mjs";
+import { bakeStyle, locate, projectIndex } from "./project.mjs";
 
 const MOCK_NOTES = "mock.notes.json";
 const EMPTY = () => ({ elements: {}, edits: {}, renames: {} });
@@ -92,7 +92,7 @@ export async function pending(path, root) {
     ...Object.keys(work.edits), ...Object.keys(work.renames), ...Object.keys(work.comments),
     ...Object.keys(work.changes),
   ]);
-  const index = await styleIndex(root);
+  const index = await projectIndex(root);
   const files = {};
   for (const id of ids) files[id] = await locate(root, id, index);
   return formatPending(work, files);
@@ -128,7 +128,7 @@ export function clear(notes, field, ids) {
 /** Writes style edits into the stylesheets that define the elements. Text edits stay for the agent. */
 export async function bake(path, root, ids) {
   const notes = await readNotes(path);
-  const index = await styleIndex(root);
+  const index = await projectIndex(root);
   const results = [];
   const edits = { ...notes.edits };
   for (const [id, edit] of Object.entries(notes.edits)) {
@@ -186,7 +186,7 @@ async function main() {
     case "bake":
       return console.log(await bake(resolve(args[0]), root, args.slice(1)));
     case "locate": {
-      const index = await styleIndex(root);
+      const index = await projectIndex(root);
       for (const id of args) {
         const { styles, sources } = await locate(root, id, index);
         console.log(`${id}\n  styles: ${styles.join(", ") || "-"}\n  sources: ${sources.join(", ") || "-"}`);

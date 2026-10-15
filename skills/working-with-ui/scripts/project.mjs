@@ -47,9 +47,9 @@ function styleText(path, content) {
 export const moduleStem = (file) => basename(file).replace(MODULE_SUFFIX, "");
 
 /** Every stylesheet in the project with the classes it defines. Paths are relative to root. */
-export async function styleIndex(root) {
+export async function styleIndex(root, paths) {
   const entries = [];
-  for (const path of await projectFiles(root)) {
+  for (const path of paths ?? (await projectFiles(root))) {
     const extension = extname(path);
     if (!STYLE_EXTENSIONS.has(extension) && !SFC_EXTENSIONS.has(extension)) continue;
     const classes = classSelectors(styleText(path, await readFile(path, "utf8")), extension);
@@ -57,6 +57,15 @@ export async function styleIndex(root) {
     entries.push({ file: relative(root, path), module: MODULE_SUFFIX.test(path), classes });
   }
   return entries;
+}
+
+export async function projectIndex(root) {
+  const paths = await projectFiles(root);
+  const sources = [];
+  for (const path of paths) {
+    if (SOURCE_EXTENSIONS.has(extname(path))) sources.push({ file: relative(root, path), content: await readFile(path, "utf8") });
+  }
+  return { styles: await styleIndex(root, paths), sources };
 }
 
 /** Classes the project defines in plain (non-module) stylesheets: their names are stable in the DOM. */
@@ -80,19 +89,17 @@ const wordPattern = (word) => new RegExp(`(?<![\\w-])${escapeRegExp(word)}(?![\\
 /** Finds where an element id lives in code: the stylesheets that define it and the sources that use it. */
 export async function locate(root, id, index) {
   const { stem, local } = parseId(id);
-  const entries = index ?? (await styleIndex(root));
+  const { styles: entries, sources: files } = index ?? (await projectIndex(root));
   const styles = entries
     .filter((entry) => entry.classes.has(local) && (stem === null || (entry.module && moduleStem(entry.file) === stem)))
     .map((entry) => entry.file);
   const dataUi = new RegExp(`data-ui=\\{?["'\`]${escapeRegExp(id)}["'\`]`);
   const word = wordPattern(local);
   const sources = [];
-  for (const path of await projectFiles(root)) {
-    if (!SOURCE_EXTENSIONS.has(extname(path))) continue;
-    const content = await readFile(path, "utf8");
+  for (const { file, content } of files) {
     const usesModule = styles.some((style) => MODULE_SUFFIX.test(style) && content.includes(basename(style)));
     const usesPlain = styles.length > 0 && stem === null && word.test(content);
-    if (dataUi.test(content) || (usesModule && word.test(content)) || usesPlain) sources.push(relative(root, path));
+    if (dataUi.test(content) || (usesModule && word.test(content)) || usesPlain) sources.push(file);
   }
   return { styles, sources };
 }
