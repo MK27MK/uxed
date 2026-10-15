@@ -1,13 +1,14 @@
 (async () => {
   if (window.__uxedShell) return;
   window.__uxedShell = true;
-  // serve.mjs --app injects this script into the running app with data-mode="app".
-  const isApp = document.currentScript?.dataset.mode === "app";
+  // The running app loads this script from serve.mjs --app with data-mode="app".
+  const { src, dataset } = document.currentScript;
+  const isApp = dataset.mode === "app";
   if (isApp && document.readyState !== "complete") await new Promise((resolve) => addEventListener("load", resolve, { once: true }));
 
-  const NOTES_URL = "/__mock/notes";
-  const EVENTS_URL = "/__mock/events";
-  const CLASSES_URL = "/__mock/classes";
+  const NOTES_URL = new URL("/__mock/notes", src);
+  const EVENTS_URL = new URL("/__mock/events", src);
+  const CLASSES_URL = new URL("/__mock/classes", src);
   const MODE_KEY = "mk-mode";
   const FOCUS_KEY = "mk-focus";
   const REFRESH_DELAY_MS = 100;

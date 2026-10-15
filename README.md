@@ -41,7 +41,7 @@ Run `/working-with-ui`, or ask the agent to mock up a component or change the ap
 ### App
 
 1. Start the app's dev server.
-2. Ask the agent to change the running app. It opens the shell over it.
+2. Ask the agent to change the running app. It adds a script tag that loads the shell into the app, on the app's own URL, and removes it when you are done.
 3. Pick elements, comment, restyle, rename, or ask for a description. Message the agent to write the changes into code and tests.
 
 The shell's `?` button lists its controls.
