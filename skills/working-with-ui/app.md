@@ -10,7 +10,7 @@ Here the code and its tests are the spec of what the app does today. The notes h
 
 1. Find the URL the user opens the app at, in the project's docs or scripts. If the app is not running, ask the user to start it as they usually do, or start it in the background when the project documents how. Never move it to another port or host.
 2. Start `node scripts/serve.mjs --app <app-url> --root <root>` in the background. It prints its URL, on port 4870 or the next free one, and then the script tag that loads the shell. It creates `<root>/.uxed/`, which ignores itself in git. Only pages on `<app-url>` can use it.
-3. Add the script tag to the `<head>` of the document every page of the app renders: the root layout or `_document` in Next.js, `index.html` in Vite, the base template elsewhere. The app keeps its own origin, so its API calls, storage and cookies work as usual.
+3. Add the script tag to the `<head>` of the document every page of the app renders: the root layout or `_document` in Next.js, `index.html` in Vite, the base template elsewhere. Render it only in development when the code can tell, such as `{process.env.NODE_ENV === "development" && <script … />}` in a JSX layout. If a tag that loads `/__mock/shell.js` is already there from an earlier session, replace it. Keep the tag out of every commit. The app keeps its own origin, so its API calls, storage and cookies work as usual.
 4. Open the app's URL in the browser. Prefer the built-in browser pane when it is available. Check once that the shell's toolbar shows and the console has no errors from `/__mock/` routes. Do no further visual QA.
 5. End the turn. Do not explain the shell in chat: its `?` button, at the bottom left, shows how to use it.
 
@@ -24,7 +24,7 @@ Here the code and its tests are the spec of what the app does today. The notes h
 6. The app updates through its dev server, and the page reloads itself when the notes change. If the user has unsaved edits, the page shows a toast instead; tell them to reload before they edit again.
 7. Report in chat only what the replies do not already say: questions, blockers, and edits `bake` could not place.
 
-Repeat until the user is done. Then remove the script tag, stop the server and delete `<root>/.uxed/`.
+Repeat until the user is done. Then remove the script tag, check that no file in the project still loads `/__mock/shell.js`, stop the server and delete `<root>/.uxed/`.
 
 ## A new component inside the app
 

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { request } from "node:http";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { once } from "node:events";
 import { tmpdir } from "node:os";
@@ -74,6 +75,24 @@ test("keeps the notes in a self-ignoring .uxed folder of the project", async () 
   assert.equal(put.status, 204);
   assert.deepEqual(JSON.parse(await readFile(join(root, ".uxed", "notes.json"), "utf8")), notes);
   assert.equal(await readFile(join(root, ".uxed", ".gitignore"), "utf8"), "*\n");
+});
+
+const requestWithHost = (host, { method = "GET", body } = {}) => new Promise((resolve, reject) => {
+  const req = request(`${base}/__mock/notes`, { method, headers: { host } }, (res) => {
+    res.resume();
+    resolve(res.statusCode);
+  });
+  req.on("error", reject);
+  req.end(body);
+});
+
+test("refuses requests addressed to any host but the loopback, as DNS rebinding sends them", async () => {
+  const { port } = new URL(base);
+  const before = await readFile(join(root, ".uxed", "notes.json"), "utf8");
+  const body = JSON.stringify({ elements: {}, edits: { x: { style: { color: "red" } } }, renames: {} });
+  assert.equal(await requestWithHost(`attacker.example:${port}`, { method: "PUT", body }), 403);
+  assert.equal(await readFile(join(root, ".uxed", "notes.json"), "utf8"), before);
+  assert.equal(await requestWithHost(`localhost:${port}`), 200);
 });
 
 test("serves nothing but the shell routes", async () => {

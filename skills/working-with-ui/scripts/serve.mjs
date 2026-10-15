@@ -151,9 +151,12 @@ function createShellRoutes(dir, notesFile, watchedFiles) {
   return { handle, close };
 }
 
+const isLoopbackHost = (host, port) => LOOPBACK_HOSTS.some((name) => host === `${name}:${port}`);
+
 function serve(route, onClose) {
   const server = createServer(async (req, res) => {
     try {
+      if (!isLoopbackHost(req.headers.host, server.address().port)) return send(res, 403, "Forbidden host");
       await route(req, res);
     } catch (error) {
       if (!error.status) console.error(error);
