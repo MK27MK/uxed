@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 import { mkdirSync, readFileSync, realpathSync, watch, writeFileSync } from "node:fs";
-import { Agent as HttpAgent, createServer, request as httpRequest } from "node:http";
-import { Agent as HttpsAgent, request as httpsRequest } from "node:https";
-import { connect as netConnect } from "node:net";
-import { connect as tlsConnect } from "node:tls";
+import { createServer } from "node:http";
 import { readFile, rename, stat, writeFile } from "node:fs/promises";
-import { StringDecoder } from "node:string_decoder";
 import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { plainClasses } from "./project.mjs";
@@ -19,9 +15,7 @@ const MOCK_FILE = "mock.html";
 const NOTES_FILE = "mock.notes.json";
 const APP_NOTES_DIR = ".uxed";
 const APP_NOTES_FILE = "notes.json";
-const APP_SHELL_TAG = '<script src="/__mock/shell.js" data-mode="app" defer></script>';
-const HEAD_TAG = /<head(?:\s[^>]*)?>/i;
-const MAX_HEAD_SEARCH_CHARS = 256_000;
+const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 const RELOAD_DEBOUNCE_MS = 150;
 const EMPTY_NOTES = `${JSON.stringify({ elements: {}, edits: {}, renames: {} }, null, 2)}\n`;
 const CONTENT_TYPES = {
@@ -187,105 +181,38 @@ export function createMockServer(dir) {
   return serve(route, shell.close);
 }
 
-/** Request headers as the upstream expects them: its own host and origin, no compression. */
-function upstreamHeaders(headers, upstream, proxyOrigin) {
-  const next = { ...headers, host: upstream.host };
-  delete next["accept-encoding"];
-  if (next.origin) next.origin = upstream.origin;
-  if (next.referer?.startsWith(proxyOrigin)) next.referer = upstream.origin + next.referer.slice(proxyOrigin.length);
-  return next;
+function appOrigins(appUrl) {
+  const app = new URL(appUrl);
+  const hosts = LOOPBACK_HOSTS.includes(app.hostname) ? LOOPBACK_HOSTS : [app.hostname];
+  return new Set(hosts.map((host) => `${app.protocol}//${host}${app.port ? `:${app.port}` : ""}`));
 }
 
-/** Streams an HTML response through, adding the shell script right after the opening <head> tag. */
-function injectShell(source, res) {
-  const decoder = new StringDecoder("utf8");
-  let buffered = "";
-  let passing = false;
-  source.on("data", (chunk) => {
-    if (passing) return res.write(chunk);
-    buffered += decoder.write(chunk);
-    const match = HEAD_TAG.exec(buffered);
-    if (!match && buffered.length < MAX_HEAD_SEARCH_CHARS) return;
-    const at = match ? match.index + match[0].length : buffered.length;
-    res.write(`${buffered.slice(0, at)}${match ? APP_SHELL_TAG : ""}${buffered.slice(at)}`);
-    buffered = "";
-    passing = true;
-  });
-  source.on("end", () => res.end(passing ? undefined : buffered + decoder.end()));
-  source.on("error", () => res.destroy());
-}
+export const appShellTag = (serverUrl) => `<script src="${new URL("/__mock/shell.js", serverUrl)}" data-mode="app" defer></script>`;
 
-export function createAppServer({ upstream: upstreamUrl, root: rootDir }) {
-  const upstream = new URL(upstreamUrl);
+export function createAppServer({ app, root: rootDir }) {
+  const allowedOrigins = appOrigins(app);
   const root = resolve(rootDir);
   const notesDir = join(root, APP_NOTES_DIR);
   mkdirSync(notesDir, { recursive: true });
   writeFileSync(join(notesDir, ".gitignore"), "*\n");
   const shell = createShellRoutes(notesDir, APP_NOTES_FILE, [APP_NOTES_FILE]);
-  const isHttps = upstream.protocol === "https:";
-  const request = isHttps ? httpsRequest : httpRequest;
-  const upstreamPort = Number(upstream.port) || (isHttps ? 443 : 80);
-  const agent = new (isHttps ? HttpsAgent : HttpAgent)({ keepAlive: true });
-  const originOf = (req) => `http://${req.headers.host}`;
-
-  function proxy(req, res) {
-    const proxyOrigin = originOf(req);
-    const outgoing = request(new URL(req.url, upstream), {
-      method: req.method,
-      headers: upstreamHeaders(req.headers, upstream, proxyOrigin),
-      agent,
-      rejectUnauthorized: false,
-    }, (incoming) => {
-      const headers = { ...incoming.headers };
-      if (headers.location?.startsWith(upstream.origin)) headers.location = proxyOrigin + headers.location.slice(upstream.origin.length);
-      const isHtml = /^text\/html/i.test(headers["content-type"] ?? "") && !headers["content-encoding"] && req.method !== "HEAD";
-      if (!isHtml) {
-        res.writeHead(incoming.statusCode, headers);
-        incoming.pipe(res);
-        return;
-      }
-      delete headers["content-length"];
-      delete headers["content-security-policy"];
-      delete headers["content-security-policy-report-only"];
-      res.writeHead(incoming.statusCode, headers);
-      injectShell(incoming, res);
-    });
-    outgoing.on("error", (error) => {
-      if (res.headersSent) res.destroy();
-      else send(res, 502, `Cannot reach ${upstream.origin}: ${error.message}`);
-    });
-    req.pipe(outgoing);
-  }
 
   async function route(req, res) {
+    const { origin } = req.headers;
+    if (allowedOrigins.has(origin)) {
+      res.setHeader("access-control-allow-origin", origin);
+      res.setHeader("access-control-allow-methods", "GET, PUT");
+      res.setHeader("access-control-allow-headers", "content-type");
+    }
+    res.setHeader("vary", "origin");
+    if (req.method === "OPTIONS") return send(res, 204, "");
     const { pathname } = new URL(req.url, `http://${HOST}`);
     if (pathname === "/__mock/classes") return send(res, 200, JSON.stringify(await plainClasses(root)), CONTENT_TYPES[".json"]);
     if (await shell.handle(req, res, pathname)) return;
-    return proxy(req, res);
+    return send(res, 404, "Not found");
   }
 
-  const server = serve(route, () => {
-    shell.close();
-    agent.destroy();
-  });
-
-  server.on("upgrade", (req, socket, head) => {
-    const connect = isHttps ? tlsConnect : netConnect;
-    const options = { host: upstream.hostname, port: upstreamPort, servername: upstream.hostname, rejectUnauthorized: false };
-    const outgoing = connect(options, () => {
-      const headers = upstreamHeaders(req.headers, upstream, originOf(req));
-      const lines = Object.entries(headers).map(([name, value]) => `${name}: ${value}`);
-      outgoing.write(`${req.method} ${req.url} HTTP/${req.httpVersion}\r\n${lines.join("\r\n")}\r\n\r\n`);
-      if (head.length > 0) outgoing.write(head);
-      outgoing.pipe(socket);
-      socket.pipe(outgoing);
-    });
-    for (const [from, to] of [[outgoing, socket], [socket, outgoing]]) {
-      for (const event of ["error", "end", "close"]) from.on(event, () => to.destroy());
-    }
-  });
-
-  return server;
+  return serve(route, shell.close);
 }
 
 function listen(server, port) {
@@ -300,8 +227,8 @@ function listen(server, port) {
 
 const USAGE = `Usage:
   serve.mjs <component-folder> [--port n]            serve the folder's mock.html
-  serve.mjs --app <dev-server-url> [--root dir] [--port n]
-                                                     proxy the running app with the shell; notes go to <root>/.uxed/notes.json`;
+  serve.mjs --app <app-url> [--root dir] [--port n]
+                                                     serve the shell to the running app; notes go to <root>/.uxed/notes.json`;
 
 function parseArgs(argv) {
   const options = { root: process.cwd() };
@@ -326,7 +253,7 @@ async function main() {
   }
   let server;
   if (options.app) {
-    server = createAppServer({ upstream: options.app, root: options.root });
+    server = createAppServer({ app: options.app, root: options.root });
   } else {
     const dir = options.dir ?? ".";
     try {
@@ -341,7 +268,9 @@ async function main() {
   for (const port of ports) {
     try {
       const bound = await listen(server, port);
-      console.log(`http://${HOST}:${bound}/`);
+      const url = `http://${HOST}:${bound}/`;
+      console.log(url);
+      if (options.app) console.log(appShellTag(url));
       return;
     } catch (error) {
       if (error.code !== "EADDRINUSE") throw error;
