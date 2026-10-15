@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{COMPONENT_NAME}} · mock</title>
+<style>
+:root {
+{{PROJECT_TOKENS}}
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+{{PAGE_BACKGROUND_AND_FONT}}
+}
+{{COMPONENT_CSS}}
+</style>
+</head>
+<body>
+<main data-mock-root="{{COMPONENT_NAME}}">
+{{COMPONENT_MARKUP}}
+</main>
+<script>
+{{PREVIEW_STATE_SCRIPT}}
+</script>
+<script src="/__mock/shell.js"></script>
+</body>
+</html>

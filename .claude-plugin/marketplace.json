@@ -1,0 +1,6 @@
+{
+  "name": "uxed",
+  "description": "Design and change UI components through an interactive mock, then implement them test-first",
+  "owner": { "name": "Mattia Carella" },
+  "plugins": [{ "name": "uxed", "source": "./" }]
+}
