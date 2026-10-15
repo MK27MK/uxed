@@ -20,13 +20,13 @@ Copy the tokens you use into the mock's `:root`. Reuse sizes, radii, borders, fo
 
 ## 3. Write `mock.html`
 
-Copy `assets/mock.template.html` to `<folder>/mock.html` and replace every `{{…}}` placeholder. `{{COMPONENT_NAME}}` is the folder's name in PascalCase (`symbol-search` becomes `SymbolSearch`).
+Copy `assets/mock.template.html` to `<folder>/mock.html` and replace every `{{…}}` placeholder. `{{COMPONENT_NAME}}` is the folder's name in PascalCase (`file-picker` becomes `FilePicker`).
 
 - Build one frame. Every state the sketches show must be reachable by interacting with it: tabs switch, back returns, rows open a detail view.
 - Use plain HTML and CSS, plus one vanilla `<script>` that holds the preview state. No framework, no build step, no network.
 - Use realistic placeholder data, shaped like the real domain.
 - Put `data-ui="<name>"` on every element the user may want to describe, comment on or restyle: each control, each row, each section. Repeated elements share one name.
-- Use the name the element has in code, or the name it will have: the component's name for a component or sub-component (`SymbolSearchDialog`), and the CSS class name for a plain element inside one (`backButton`). Read existing names from the component's source and stylesheet. Name a new element the way the project names its siblings.
+- Use the name the element has in code, or the name it will have: the component's name for a component or sub-component (`FilePickerDialog`), and the CSS class name for a plain element inside one (`backButton`). Read existing names from the component's source and stylesheet. Name a new element the way the project names its siblings.
 - Put `data-oos="<what it would really do>"` on every control whose real effect needs a backend, another component or real computation, such as saving to a server or adding data to another view. In preview the shell blocks it and shows an "Out of scope" toast. Purely local UI changes, such as switching a tab, opening a detail view or typing in a field, work for real.
 - Use real `<button>`, `<a>`, `<input>` and `<label>` elements. Give icon-only buttons an `aria-label`.
 - Define `window.mockReveal = (id) => { … }` in the script. It puts the preview in a state that shows an element with that `data-ui` id. The shell calls it to outline an element that the current state hides, for example when the user jumps to an assumption.
