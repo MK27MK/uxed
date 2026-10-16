@@ -1,8 +1,6 @@
 # uxed
 
-<video src="https://github.com/MK27MK/uxed/raw/main/assets/walkthrough.mp4" poster="assets/walkthrough.jpg" controls muted width="100%">
-  <a href="assets/walkthrough.mp4"><img src="assets/walkthrough.jpg" alt="Sketch → mock → code with building-ui"></a>
-</video>
+[![Sketch → mock → code with building-ui](assets/walkthrough.jpg)](assets/walkthrough.mp4)
 
 ## Install
 
