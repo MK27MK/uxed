@@ -1,5 +1,9 @@
 # uxed
 
+Skills and other agentic tools that get you into flow state while working with your agent.
+Chatting back and forth is a slow, lossy way to tell an agent what you want.
+Each skill replaces it with an interaction built for high human-agent alignment.
+
 [![Sketch → mock → code with building-ui](assets/walkthrough.jpg)](assets/walkthrough.mp4)
 
 ## Install

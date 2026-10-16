@@ -1,5 +1,9 @@
 # building-ui
 
+Prompting for UI is a gamble: you describe a component, wait, and hope this edit is the one you wanted.
+building-ui opens an interactive mock you edit directly, like Figma frames, then implements it with TDD.
+Sketch to mock: 2m 30s and an editable, interactive component, against 5m 44s with ChatGPT and 15m 31s with Claude Design.
+
 Run `/building-ui`, or ask the agent to mock up a component or change the app's UI.
 
 ## Mock mode
