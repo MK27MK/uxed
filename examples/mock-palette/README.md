@@ -35,12 +35,12 @@ And [`mock.notes.json`](mock.notes.json): 51 behaviour rules on 18 elements, 4 o
 
 | Tool | Time to a mock |
 | --- | --- |
-| building-ui | 2 min 30 s |
-| ChatGPT | 5 min |
-| Claude Design | 15 min |
+| building-ui (Opus 5.5 medium) | 2 min 30 s |
+| ChatGPT (Sol 6.1 high) | 5 min 44s |
+| Claude Design (Opus 5.5 medium) | 15 min 31s |
 
 ## Open it
 
 ```
-node skills/building-ui/scripts/serve.mjs examples/strategy-search
+node skills/building-ui/scripts/serve.mjs examples/mock-palette
 ```
