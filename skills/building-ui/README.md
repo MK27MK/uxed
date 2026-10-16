@@ -4,6 +4,8 @@ Run `/building-ui`, or ask the agent to mock up a component or change the app's 
 
 ## Mock mode
 
+https://github.com/user-attachments/assets/b045f5f9-5781-47c3-a183-bcce4bd04fa5
+
 Use it to mock a new component from a spec and a sketch, in the project's style, then implement it using TDD, or you can use it to change existing component.
 
 ### How to use
@@ -16,7 +18,7 @@ Use it to mock a new component from a spec and a sketch, in the project's style,
 
 [Strategy search](../../examples/mock-palette/README.md): three sketches and a spec, and the mock they became.
 
-## App
+## App mode
 
 Inspect, comment on, restyle and rename elements of the running app, with the changes written into code and tests.
 
