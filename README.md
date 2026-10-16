@@ -25,3 +25,7 @@ codex plugin add uxed@uxed
 ## Skills
 
 - [building-ui](skills/building-ui/README.md)
+
+## Examples
+
+- [Strategy search](examples/mock-palette/README.md): a component mocked from three sketches and a spec with building-ui's mock mode.
