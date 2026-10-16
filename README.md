@@ -1,5 +1,7 @@
 # uxed
 
+[![Sketch → mock → code with building-ui](assets/walkthrough.jpg)](assets/walkthrough.mp4)
+
 ## Install
 
 With [skills](https://github.com/vercel-labs/skills), for any agent:
