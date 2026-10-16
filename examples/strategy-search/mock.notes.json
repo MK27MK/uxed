@@ -1,0 +1,338 @@
+{
+  "elements": {
+    "search-input": {
+      "behaviour": [
+        {
+          "text": "Focus the input when the dialog opens and when returning from a strategy detail.",
+          "source": "spec"
+        },
+        {
+          "text": "On input, filter the active tab: Symbols by ticker, Strategies by name and file path, case-insensitive substring.",
+          "source": "spec"
+        },
+        {
+          "text": "Keep a separate query per tab; switching tabs restores that tab's query.",
+          "source": "spec"
+        },
+        {
+          "text": "Show the placeholder \"Search symbols…\" or \"Search strategies…\" for the active tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Limit input to 20 characters.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "add-store": {
+      "behaviour": [
+        {
+          "text": "Show only on the Symbols tab.",
+          "source": "spec"
+        },
+        {
+          "text": "On click, open the market data store picker.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "category-tab": {
+      "behaviour": [
+        {
+          "text": "On click, switch between Symbols and Strategies and focus the search input.",
+          "source": "spec"
+        },
+        {
+          "text": "Hide the asset filters and keyboard hints footer on the Strategies tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Hide the whole category switch while a strategy detail is open.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "asset-filter": {
+      "behaviour": [
+        {
+          "text": "On click, restrict the symbol list to that asset type; All removes the restriction.",
+          "source": "spec"
+        },
+        {
+          "text": "Mark exactly one filter as pressed.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "symbol-row": {
+      "behaviour": [
+        {
+          "text": "On click or Enter, load the symbol into the target chart and close the dialog.",
+          "source": "spec"
+        },
+        {
+          "text": "When no symbol matches, show \"No symbols found.\"",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "strategy-row": {
+      "behaviour": [
+        {
+          "text": "List every strategy discovered in the strategies/ subfolder of the configured root, as a compact row like the symbol rows: name, a PY badge, file path, parameter count and past run count.",
+          "source": "spec"
+        },
+        {
+          "text": "On click or Enter, open the strategy detail on the Configuration tab and focus the back button.",
+          "source": "spec"
+        },
+        {
+          "text": "When no strategy matches, show \"No strategies found in <root>/strategies.\"",
+          "source": "spec"
+        },
+        {
+          "text": "List files that failed to load below the list with their path and reason.",
+          "source": "spec"
+        }
+      ],
+      "comments": [
+        {
+          "author": "user",
+          "text": "Dovrebbe avere un aspetto più simile a symbol row per coerenza.",
+          "at": "2026-10-14T22:28:05.273Z",
+          "resolved": true
+        },
+        {
+          "author": "agent",
+          "text": "Le righe strategia ora usano lo stesso stile delle righe simbolo: nome in grassetto, badge PY, percorso del file, numero di parametri e di run in mono a destra. Rimosse le righe alte 72px con separatori.",
+          "at": "2026-10-15T08:00:00Z",
+          "resolved": true
+        }
+      ]
+    },
+    "back-button": {
+      "behaviour": [
+        {
+          "text": "On click or Escape, return to the strategy list with the previous query intact and focus the search input.",
+          "source": "spec"
+        },
+        {
+          "text": "Discard unsaved parameter edits.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "run-button": {
+      "behaviour": [
+        {
+          "text": "On click, run a backtest with the current parameter values.",
+          "source": "spec"
+        },
+        {
+          "text": "Disable it while any parameter is invalid, with the tooltip \"Correct the parameters before running\".",
+          "source": "spec"
+        },
+        {
+          "text": "Disable it while a backtest of this strategy is running, with the tooltip \"Backtest running\".",
+          "source": "spec"
+        },
+        {
+          "text": "When the run succeeds, prepend it to Past runs.",
+          "source": "spec"
+        },
+        {
+          "text": "When the run fails, show the error below the tabs.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "detail-tab": {
+      "behaviour": [
+        {
+          "text": "On click, switch between Configuration and Past runs.",
+          "source": "spec"
+        },
+        {
+          "text": "Keep parameter edits when switching tabs.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "description": {
+      "behaviour": [
+        {
+          "text": "Show the strategy's description string from its definition in strategy.py, preserving line breaks.",
+          "source": "spec"
+        },
+        {
+          "text": "Show it in an editable multi-line field; when empty, show the placeholder \"No description provided. Click to write one.\"",
+          "source": "spec"
+        }
+      ],
+      "comments": [
+        {
+          "author": "user",
+          "text": "rendila editabile",
+          "at": "2026-10-14T22:53:56.220Z",
+          "resolved": true
+        },
+        {
+          "author": "agent",
+          "text": "La descrizione ora è un campo di testo modificabile dentro il riquadro. Quando la modifichi compaiono Revert e Save to file. Save scriverebbe la docstring nel file .py (fuori scope nel mock). Il comportamento è nei nuovi elementi description-input, description-save e description-revert.",
+          "at": "2026-10-15T09:00:00Z",
+          "resolved": true
+        }
+      ]
+    },
+    "parameter": {
+      "behaviour": [
+        {
+          "text": "Render one row per strategy parameter, prefilled with its default value.",
+          "source": "spec"
+        },
+        {
+          "text": "Render integer and number parameters as a text field with a stepper; render booleans as a True/False select.",
+          "source": "spec"
+        },
+        {
+          "text": "On invalid input, mark the field red and show the reason below it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "parameter-stepper": {
+      "behaviour": [
+        {
+          "text": "On click of ▲ or ▼, add or subtract the parameter's step, never going below its minimum.",
+          "source": "spec"
+        },
+        {
+          "text": "In the field, ArrowUp and ArrowDown do the same.",
+          "source": "spec"
+        },
+        {
+          "text": "Do nothing when the field holds an invalid number.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "run-sort": {
+      "behaviour": [
+        {
+          "text": "Sort past runs by Ending time (newest first, default) or Final P&L (highest first).",
+          "source": "spec"
+        },
+        {
+          "text": "Keep the chosen sort while the detail stays open.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "run-row": {
+      "behaviour": [
+        {
+          "text": "Show the run's ending time, its parameters, and whether it ran on the current or a previous version of the strategy on the left.",
+          "source": "spec"
+        },
+        {
+          "text": "Show the final P&L on the right, vertically centred and next to the add-equity button; green when positive, red when negative.",
+          "source": "spec"
+        },
+        {
+          "text": "When the strategy has no runs, show \"No past runs. Press ▶ to run a backtest.\"",
+          "source": "spec"
+        }
+      ],
+      "comments": [
+        {
+          "author": "user",
+          "text": "allinea orizzontalmente il P&L rispetto al bottone show on chart",
+          "at": "2026-10-14T22:54:44.521Z",
+          "resolved": true
+        },
+        {
+          "author": "agent",
+          "text": "Il P&L ora ha una colonna propria a destra, centrata verticalmente e allineata al pulsante per aggiungere l'equity al grafico.",
+          "at": "2026-10-15T09:00:00Z",
+          "resolved": false
+        }
+      ]
+    },
+    "add-equity": {
+      "behaviour": [
+        {
+          "text": "On click, add the run's equity curve to the focused chart as a new series.",
+          "source": "spec"
+        },
+        {
+          "text": "When the run has no curve named equity, list its saved curves so the user can pick one.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "description-input": {
+      "behaviour": [
+        {
+          "text": "On input, keep the edited text as a draft and show Revert and Save to file.",
+          "source": "spec"
+        },
+        {
+          "text": "Hide both buttons again when the draft matches the saved description.",
+          "source": "spec"
+        },
+        {
+          "text": "Escape leaves the field without discarding the draft; a second Escape closes the detail.",
+          "source": "assumption"
+        },
+        {
+          "text": "Leaving the detail with Back discards an unsaved draft.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "description-save": {
+      "behaviour": [
+        {
+          "text": "On click, write the draft into the description string of the strategy's definition in its .py file, keeping the rest of the file unchanged.",
+          "source": "spec"
+        },
+        {
+          "text": "On success, hide Revert and Save to file and treat the draft as the saved description.",
+          "source": "spec"
+        },
+        {
+          "text": "When the file changed on disk since it was loaded, do not write; show an error and keep the draft.",
+          "source": "assumption"
+        },
+        {
+          "text": "On a write error, show it below the field and keep the draft.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "description-revert": {
+      "behaviour": [
+        {
+          "text": "On click, replace the draft with the saved description and hide Revert and Save to file.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    }
+  },
+  "edits": {}
+}
