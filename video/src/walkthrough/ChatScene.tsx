@@ -30,19 +30,19 @@ const SKETCHES = [
 
 const T = {
   commandFrom: 6,
-  commandTo: 21,
-  promptFrom: 30,
-  promptTo: 44,
-  sketchFirst: 50,
-  sketchEvery: 21,
-  sketchHold: 15,
-  sketchFly: 7,
-  cursorIn: 114,
-  send: 126,
-  bubbleTo: 140,
-  skill: 144,
-  loaded: 150,
-  ready: 158,
+  commandTo: 24,
+  promptFrom: 34,
+  promptTo: 56,
+  sketchFirst: 64,
+  sketchEvery: 26,
+  sketchHold: 19,
+  sketchFly: 8,
+  cursorIn: 144,
+  send: 158,
+  bubbleTo: 174,
+  skill: 178,
+  loaded: 186,
+  ready: 196,
 };
 
 const COMPOSER = { left: 370, width: 1180, bottom: 960, closed: 200, open: 360 };
@@ -52,8 +52,8 @@ const BUBBLE = { right: 1550, top: 130, width: 900 };
 
 const SHOTS = [
   { frame: 0, focus: { x: 760, y: 880 }, zoom: 1.9 },
-  { frame: 118, focus: { x: 960, y: 760 }, zoom: 1.2 },
-  { frame: 156, focus: { x: 960, y: 430 }, zoom: 1.3 },
+  { frame: 148, focus: { x: 960, y: 760 }, zoom: 1.2 },
+  { frame: 194, focus: { x: 960, y: 430 }, zoom: 1.3 },
 ];
 
 const thumbSlot = (index: number) => ({
@@ -95,7 +95,7 @@ const PaperPlane = () => (
 const ChatSceneInner = () => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
-  const camera = cameraAt(frame, SHOTS, 50);
+  const camera = cameraAt(frame, SHOTS, 56);
 
   const typed =
     COMMAND.slice(0, Math.round(interpolate(frame, [T.commandFrom, T.commandTo], [0, COMMAND.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }))) +

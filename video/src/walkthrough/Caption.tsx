@@ -1,5 +1,5 @@
 import type React from "react";
-import { Easing, interpolate } from "remotion";
+import { Easing, interpolate, spring, useVideoConfig } from "remotion";
 import { colors, sans } from "../theme";
 import type { Point } from "./camera";
 
@@ -12,6 +12,30 @@ type CaptionProps = {
   readonly side?: "right" | "below" | "left" | "above";
 };
 
+const EXIT = 6;
+
+const jelly = (frame: number, fps: number) => {
+  const width = spring({
+    frame,
+    fps,
+    config: { mass: 0.4, stiffness: 420, damping: 15 },
+  });
+  const height = spring({
+    frame,
+    fps,
+    delay: 1,
+    config: { mass: 0.4, stiffness: 420, damping: 15 },
+  });
+  return { width, height };
+};
+
+const shrink = (frame: number, to: number) =>
+  interpolate(frame, [to - EXIT, to - EXIT + 2, to], [1, 1.04, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.5, 0, 0.75, 0),
+  });
+
 export const Caption: React.FC<CaptionProps> = ({
   children,
   anchor,
@@ -20,16 +44,15 @@ export const Caption: React.FC<CaptionProps> = ({
   to,
   side = "right",
 }) => {
-  const enter = interpolate(frame, [from, from + 8], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
-  const exit = interpolate(frame, [to - 6, to], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const { fps } = useVideoConfig();
   if (frame < from || frame > to) return null;
+
+  const enter = jelly(frame - from, fps);
+  const exit = shrink(frame, to);
+  const squash = interpolate(frame, [to - EXIT + 2, to], [0, 0.05], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const offset = {
     right: { translate: "28px -50%", origin: "0% 50%" },
@@ -46,9 +69,8 @@ export const Caption: React.FC<CaptionProps> = ({
         top: anchor.y,
         translate: offset.translate,
         transformOrigin: offset.origin,
-        scale: String(0.85 + 0.15 * enter),
-        opacity: Math.min(enter, exit),
-        padding: "16px 28px",
+        scale: `${enter.width * exit * (1 + squash)} ${enter.height * exit * (1 - squash)}`,
+        padding: "16px 30px 20px",
         borderRadius: 999,
         background: colors.accent,
         color: "#ffffff",
@@ -57,7 +79,12 @@ export const Caption: React.FC<CaptionProps> = ({
         fontWeight: 700,
         letterSpacing: "-0.01em",
         whiteSpace: "nowrap",
-        boxShadow: "0 12px 40px rgb(0 0 0 / 0.45)",
+        textShadow: "0 2px 0 rgb(0 40 110 / 0.35)",
+        boxShadow: [
+          "inset 0 4px 6px rgb(0 35 100 / 0.35)",
+          "inset 0 -6px 0 rgb(0 45 120 / 0.45)",
+          "inset 0 -12px 18px rgb(0 40 110 / 0.25)",
+        ].join(", "),
       }}
     >
       {children}

@@ -38,33 +38,39 @@ import {
 const VIEWPORT = { width: 1536, height: 864 };
 const BASE = 1920 / VIEWPORT.width;
 const COMMENT = "Make the row taller";
+const REPLY = "Raised the row padding from 7px to 16px.";
 
 const T = {
-  cursorIn: 34,
-  tabArrive: 56,
-  tabClick: 60,
-  interactUntil: 90,
-  inspectArrive: 112,
-  inspectClick: 116,
-  inspectUntil: 144,
-  sweep: [164, 178, 192],
-  rowClick: 196,
-  panelArrive: 220,
-  scrollFrom: 237,
-  scrollTo: 249,
-  inputArrive: 255,
-  typeFrom: 259,
-  typeTo: 279,
-  buttonArrive: 289,
-  commentClick: 293,
-  closePanel: 300,
-  listArrive: 318,
-  growFrom: 322,
-  growTo: 338,
-  appliedUntil: 364,
+  cursorIn: 38,
+  tabArrive: 64,
+  tabClick: 68,
+  interactUntil: 104,
+  inspectArrive: 130,
+  inspectClick: 134,
+  inspectUntil: 168,
+  sweep: [190, 206, 222],
+  rowClick: 226,
+  panelWide: 250,
+  rulesArrive: 262,
+  rulesClose: 280,
+  scrollFrom: 298,
+  scrollTo: 320,
+  inputArrive: 334,
+  typeFrom: 340,
+  typeTo: 368,
+  buttonArrive: 380,
+  commentClick: 386,
+  cursorOut: 410,
+  agentReply: 416,
+  wideArrive: 470,
+  growFrom: 466,
+  growTo: 492,
+  appliedUntil: 530,
 };
 
-const ROW_PADDING = { from: 7, to: 14 };
+const CLICKS = [T.tabClick, T.inspectClick, T.rowClick, T.inputArrive + 2, T.commentClick];
+
+const ROW_PADDING = { from: 7, to: 16 };
 
 const ACTIONS: Action[] = [
   { frame: T.tabClick, run: (dom) => (q(dom, '[data-tab="strategies"]') as HTMLElement).click() },
@@ -78,14 +84,7 @@ const ACTIONS: Action[] = [
       shadowButton(dom, "Comment")?.click();
     },
   },
-  {
-    frame: T.closePanel,
-    run: (dom) => {
-      const { KeyboardEvent } = dom.win as unknown as typeof globalThis;
-      dom.doc.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-      (sq(dom, 'button[title="Preview"]') as HTMLElement).click();
-    },
-  },
+  { frame: T.agentReply, run: (dom) => shadowButton(dom, "Resolve")?.click() },
 ];
 
 type View = {
@@ -100,14 +99,48 @@ const center = (rect: Rect | null): Point | null =>
 const below = (rect: Rect | null): Point | null =>
   rect ? { x: (rect.x + rect.width / 2) * BASE, y: (rect.y + rect.height) * BASE } : null;
 
-const above = (rect: Rect | null): Point | null =>
-  rect ? { x: (rect.x + rect.width / 2) * BASE, y: rect.y * BASE } : null;
-
 const FULL: Point = { x: 960, y: 540 };
+const PANEL_TOP: Rect = { x: VIEWPORT.width - 320, y: 0, width: 320, height: 560 };
+
+const scrollEnd = (panel: HTMLElement, comments: HTMLElement) =>
+  Math.min(comments.offsetTop - 24, panel.scrollHeight - panel.clientHeight);
+
+const union = (a: Rect | null, b: Rect | null): Rect | null => {
+  if (!a || !b) return a ?? b;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+};
+
+const fit = (rect: Rect | null) =>
+  rect ? Math.min(1920 / (rect.width * BASE * 1.1), 1080 / (rect.height * BASE * 1.15)) : 1;
+
+const insideFrame = ({ focus, zoom }: Camera): Camera => {
+  const halfWidth = 960 / zoom;
+  const halfHeight = 540 / zoom;
+  return {
+    zoom,
+    focus: {
+      x: Math.min(Math.max(focus.x, halfWidth), 1920 - halfWidth),
+      y: Math.min(Math.max(focus.y, halfHeight), 1080 - halfHeight),
+    },
+  };
+};
 
 const targets = (dom: MockDom) => {
-  const panel = rectOf(sq(dom, ".mk-panel"));
-  const input = rectOf(sq(dom, 'textarea[aria-label="New comment"]'));
+  const panel = sq(dom, ".mk-panel") as HTMLElement | null;
+  const comments = commentsSection(dom) as HTMLElement | null;
+  const scrollLeft = panel && comments ? scrollEnd(panel, comments) - panel.scrollTop : 0;
+  const posted = rectOf(sq(dom, ".mk-panel .mk-comment"));
+  const shift = posted ? posted.height + 8 : 0;
+  const lift = (rect: Rect | null) => (rect ? { ...rect, y: rect.y - shift } : null);
+  const input = lift(rectOf(sq(dom, 'textarea[aria-label="New comment"]')));
+  const heading = rectOf(comments?.querySelector("h3"));
   const rows = [...dom.doc.querySelectorAll("[data-strategy]")].map((row) => rectOf(row));
   return {
     tab: rectOf(q(dom, '[data-tab="strategies"]')),
@@ -118,10 +151,11 @@ const targets = (dom: MockDom) => {
     toolbar: rectOf(sq(dom, ".mk-modes")),
     rows,
     list: rectOf(q(dom, "#strategy-list")),
-    panelTop: panel ? { ...panel, height: Math.min(panel.height, 560) } : null,
+    panelTop: PANEL_TOP,
     input,
     inputStart: input ? { ...input, x: input.x + 16, width: 0 } : null,
-    button: rectOf(shadowButton(dom, "Comment")),
+    comments: input && heading ? { ...input, y: heading.y - scrollLeft, height: 150 } : null,
+    button: lift(rectOf(shadowButton(dom, "Comment"))),
   };
 };
 
@@ -140,14 +174,15 @@ const measure = (frame: number, dom: MockDom): View => {
   const t = targets(dom);
   const shots: Shot[] = [
     { frame: 0, focus: FULL, zoom: 1 },
-    { frame: 54, travel: 24, focus: center(t.tabs) ?? FULL, zoom: 1.9 },
-    { frame: T.inspectArrive, travel: 22, focus: center(t.toolbar) ?? FULL, zoom: 2.2 },
-    { frame: 156, travel: 22, focus: center(t.dialog) ?? FULL, zoom: 1.15 },
-    { frame: T.panelArrive, travel: 22, focus: center(t.panelTop) ?? FULL, zoom: 1.6 },
-    { frame: T.inputArrive + 2, travel: 18, focus: center(t.input) ?? center(t.panelTop) ?? FULL, zoom: 1.75 },
-    { frame: T.listArrive, travel: 18, focus: center(t.list) ?? FULL, zoom: 1.9 },
+    { frame: 62, travel: 28, focus: center(t.tabs) ?? FULL, zoom: 1.9 },
+    { frame: T.inspectArrive, travel: 26, focus: center(t.toolbar) ?? FULL, zoom: 2.2 },
+    { frame: 182, travel: 26, focus: center(t.dialog) ?? FULL, zoom: 1.15 },
+    { frame: T.panelWide, travel: 34, focus: center(union(t.dialog, t.panelTop)) ?? FULL, zoom: fit(union(t.dialog, t.panelTop)) },
+    { frame: T.rulesClose + 4, travel: 30, focus: center(t.panelTop) ?? FULL, zoom: 1.5 },
+    { frame: T.inputArrive + 4, travel: 40, focus: center(t.comments) ?? center(t.panelTop) ?? FULL, zoom: 1.75 },
+    { frame: T.wideArrive + 4, travel: 40, focus: center(union(t.dialog, t.panelTop)) ?? FULL, zoom: fit(union(t.dialog, t.panelTop)) },
   ];
-  const camera = cameraAt(frame, shots, 20);
+  const camera = insideFrame(cameraAt(frame, shots, 20));
   const row = (i: number) => center(t.rows[i] ?? null);
   const world = pathAt(frame, [
     { frame: T.cursorIn, at: { x: 1180, y: 860 } },
@@ -158,12 +193,14 @@ const measure = (frame: number, dom: MockDom): View => {
     { frame: T.sweep[0], at: center(t.search) },
     { frame: T.sweep[1], at: center(t.tabs) },
     { frame: T.sweep[2], at: row(0) },
-    { frame: T.scrollFrom, at: row(0) },
+    { frame: T.rowClick + 4, at: row(0) },
+    { frame: T.rulesArrive, at: center(t.panelTop) },
+    { frame: T.scrollTo, at: center(t.panelTop) },
     { frame: T.inputArrive, at: center(t.inputStart) },
     { frame: T.typeTo + 2, at: center(t.inputStart) },
     { frame: T.buttonArrive, at: center(t.button) },
     { frame: T.commentClick + 4, at: center(t.button) },
-    { frame: T.listArrive, at: t.list ? { x: (t.list.x + t.list.width + 40) * BASE, y: (t.list.y + t.list.height * 0.6) * BASE } : null },
+    { frame: T.cursorOut, at: { x: 2100, y: 1300 } },
   ]);
   const { width, height } = { width: 1920, height: 1080 };
   const screen = (p: Point | null) => (p ? toScreen(p, camera, width, height) : toScreen(FULL, camera, width, height));
@@ -173,37 +210,79 @@ const measure = (frame: number, dom: MockDom): View => {
     anchors: {
       tab: screen(below(t.tab)),
       inspect: screen(below(t.inspect)),
-      input: screen(above(t.input)),
+      rules: screen(t.panelTop ? { x: t.panelTop.x * BASE, y: (t.panelTop.y + t.panelTop.height / 2) * BASE } : null),
+      input: screen(t.input ? { x: t.input.x * BASE, y: (t.input.y + t.input.height / 2) * BASE } : null),
       list: screen(below(t.rows[t.rows.length - 1] ?? null)),
     },
   };
 };
 
-const applyContinuous = (frame: number, dom: MockDom) => {
-  let rowStyle = dom.doc.getElementById("walkthrough-rows");
-  if (!rowStyle) {
-    rowStyle = dom.doc.createElement("style");
-    rowStyle.id = "walkthrough-rows";
-    dom.doc.head.append(rowStyle);
+const addAgentReply = (dom: MockDom) => {
+  const comment = sq(dom, ".mk-panel .mk-comment");
+  if (!comment || sq(dom, "#walkthrough-reply")) return;
+  const reply = comment.cloneNode(true) as HTMLElement;
+  reply.id = "walkthrough-reply";
+  reply.dataset.resolved = "false";
+  reply.querySelectorAll("button").forEach((button) => button.remove());
+  reply.querySelector("strong")!.textContent = "Agent";
+  reply.querySelector("p")!.textContent = REPLY;
+  comment.after(reply);
+};
+
+const styleIn = (dom: MockDom, root: Document | ShadowRoot, id: string) => {
+  let style = root.getElementById(id);
+  if (!style) {
+    style = dom.doc.createElement("style");
+    style.id = id;
+    (root === dom.doc ? dom.doc.head : root).append(style);
   }
+  return style;
+};
+
+const slidePanel = (frame: number, dom: MockDom) => {
+  const open = segmentProgress(frame, T.rowClick, T.rowClick + 18);
+  styleIn(dom, dom.doc, "walkthrough-page").textContent =
+    `html.mk-has-panel body { margin-right: ${open * 320}px !important; }`;
+  styleIn(dom, dom.shadow, "walkthrough-panel").textContent =
+    `.mk-panel { translate: ${(1 - open) * 320}px 0; }`;
+};
+
+const reposition = (dom: MockDom) => {
+  const { Event } = dom.win as unknown as typeof globalThis;
+  dom.win.dispatchEvent(new Event("scroll"));
+};
+
+const applyContinuous = (frame: number, dom: MockDom) => {
+  slidePanel(frame, dom);
+  const rowStyle = styleIn(dom, dom.doc, "walkthrough-rows");
   const padding = interpolate(frame, [T.growFrom, T.growTo], [ROW_PADDING.from, ROW_PADDING.to], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.bezier(0.65, 0, 0.35, 1),
   });
   rowStyle.textContent = `#strategy-list .item { padding-block: ${padding}px; }`;
+  if (frame >= T.growFrom) {
+    for (const side of ["top", "bottom"]) {
+      const field = sq(dom, `#mk-padding-${side}`) as HTMLInputElement | null;
+      if (field) field.value = `${Math.round(padding)}px`;
+    }
+    const height = sq(dom, "#mk-height") as HTMLInputElement | null;
+    if (height) height.value = `${Math.round(32 + 2 * (padding - ROW_PADDING.from))}px`;
+  }
 
   const panel = sq(dom, ".mk-panel") as HTMLElement | null;
   const comments = commentsSection(dom) as HTMLElement | null;
   if (panel && comments && frame >= T.scrollFrom) {
-    const end = Math.min(comments.offsetTop - 24, panel.scrollHeight - panel.clientHeight);
-    panel.scrollTop = end * segmentProgress(frame, T.scrollFrom, T.scrollTo);
+    panel.scrollTop = scrollEnd(panel, comments) * segmentProgress(frame, T.scrollFrom, T.scrollTo);
   }
+  if (frame >= T.agentReply) addAgentReply(dom);
+
   const input = sq(dom, 'textarea[aria-label="New comment"]') as HTMLTextAreaElement | null;
   if (input && frame < T.commentClick) {
     const chars = Math.round(interpolate(frame, [T.typeFrom, T.typeTo], [0, COMMENT.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
     input.value = COMMENT.slice(0, chars);
   }
+  reposition(dom);
 };
 
 const MockSceneInner = () => {
@@ -276,8 +355,13 @@ const MockSceneInner = () => {
       <Caption anchor={{ x: width / 2, y: 890 }} frame={frame} from={T.sweep[0] - 4} to={T.rowClick} side="below">
         Every element, named as in code
       </Caption>
+      {anchors.rules ? (
+        <Caption anchor={anchors.rules} frame={frame} from={T.panelWide} to={T.scrollFrom + 2} side="left">
+          Behaviour, written as rules
+        </Caption>
+      ) : null}
       {anchors.input ? (
-        <Caption anchor={anchors.input} frame={frame} from={T.inputArrive} to={T.commentClick + 2} side="above">
+        <Caption anchor={anchors.input} frame={frame} from={T.inputArrive} to={T.commentClick + 4} side="left">
           Comment on it
         </Caption>
       ) : null}
@@ -291,8 +375,8 @@ const MockSceneInner = () => {
         <Cursor
           position={view.cursor}
           frame={frame}
-          clicks={[T.tabClick, T.inspectClick, T.rowClick, T.inputArrive + 2, T.commentClick]}
-          visible={frame >= T.cursorIn && frame < T.closePanel + 6}
+          clicks={CLICKS}
+          visible={frame >= T.cursorIn && frame < T.cursorOut}
         />
       ) : null}
     </>
