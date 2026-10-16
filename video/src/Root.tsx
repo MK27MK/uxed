@@ -35,7 +35,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="WalkthroughPrompt"
           component={ChatScene}
-          durationInFrames={160}
+          durationInFrames={184}
           fps={30}
           width={1920}
           height={1080}
@@ -44,7 +44,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="WalkthroughMock"
           component={MockScene}
-          durationInFrames={362}
+          durationInFrames={376}
           fps={30}
           width={1920}
           height={1080}
@@ -53,7 +53,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="WalkthroughEnd"
           component={EndCard}
-          durationInFrames={102}
+          durationInFrames={64}
           fps={30}
           width={1920}
           height={1080}

@@ -34,15 +34,15 @@ const T = {
   promptFrom: 30,
   promptTo: 44,
   sketchFirst: 50,
-  sketchEvery: 15,
-  sketchHold: 9,
+  sketchEvery: 21,
+  sketchHold: 15,
   sketchFly: 7,
-  cursorIn: 96,
-  send: 108,
-  bubbleTo: 122,
-  skill: 126,
-  loaded: 132,
-  ready: 140,
+  cursorIn: 114,
+  send: 126,
+  bubbleTo: 140,
+  skill: 144,
+  loaded: 150,
+  ready: 158,
 };
 
 const COMPOSER = { left: 370, width: 1180, bottom: 960, closed: 200, open: 360 };
@@ -52,8 +52,8 @@ const BUBBLE = { right: 1550, top: 130, width: 900 };
 
 const SHOTS = [
   { frame: 0, focus: { x: 760, y: 880 }, zoom: 1.9 },
-  { frame: 100, focus: { x: 960, y: 760 }, zoom: 1.2 },
-  { frame: 138, focus: { x: 960, y: 430 }, zoom: 1.3 },
+  { frame: 118, focus: { x: 960, y: 760 }, zoom: 1.2 },
+  { frame: 156, focus: { x: 960, y: 430 }, zoom: 1.3 },
 ];
 
 const thumbSlot = (index: number) => ({
@@ -201,7 +201,7 @@ const ChatSceneInner = () => {
             {frame >= T.ready ? (
               <div style={{ marginTop: 18, opacity: segmentProgress(frame, T.ready, T.ready + 4) }}>
                 <span style={{ color: "#3fb950" }}>● </span>
-                mock.html ready <span style={{ color: colors.muted }}>· 2:30</span>
+                mock.html ready <span style={{ color: colors.muted }}>· Worked 2m 30s</span>
               </div>
             ) : null}
           </div>

@@ -12,21 +12,21 @@ export const Walkthrough = () => {
 
   return (
     <TransitionSeries name="Scenes">
-      <TransitionSeries.Sequence name="Prompt" durationInFrames={160}>
+      <TransitionSeries.Sequence name="Prompt" durationInFrames={184}>
         <ChatScene style={{ backgroundColor: colors.background }} />
       </TransitionSeries.Sequence>
       <TransitionSeries.Transition
         presentation={{ component: PulsePresentation, props: {} }}
         timing={linearTiming({ durationInFrames: 0.4 * fps })}
       />
-      <TransitionSeries.Sequence name="Mock" durationInFrames={362}>
+      <TransitionSeries.Sequence name="Mock" durationInFrames={376}>
         <MockScene style={{ backgroundColor: "#0b0e12" }} />
       </TransitionSeries.Sequence>
       <TransitionSeries.Transition
         presentation={fade()}
         timing={linearTiming({ durationInFrames: 0.4 * fps })}
       />
-      <TransitionSeries.Sequence name="End" durationInFrames={3.4 * fps}>
+      <TransitionSeries.Sequence name="End" durationInFrames={64}>
         <EndCard
           style={{
             backgroundColor: colors.background,

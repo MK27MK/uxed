@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   continueRender,
   delayRender,
+  Easing,
   IFrame,
   Interactive,
   interpolate,
@@ -42,18 +43,28 @@ const T = {
   cursorIn: 34,
   tabArrive: 56,
   tabClick: 60,
-  inspectArrive: 122,
-  inspectClick: 126,
-  sweep: [178, 194, 208, 220, 232, 244, 258],
-  rowClick: 262,
-  scrollFrom: 288,
-  scrollTo: 300,
-  inputArrive: 306,
-  typeFrom: 310,
-  typeTo: 330,
-  buttonArrive: 340,
-  commentClick: 344,
+  interactUntil: 90,
+  inspectArrive: 112,
+  inspectClick: 116,
+  inspectUntil: 144,
+  sweep: [164, 178, 192],
+  rowClick: 196,
+  panelArrive: 220,
+  scrollFrom: 237,
+  scrollTo: 249,
+  inputArrive: 255,
+  typeFrom: 259,
+  typeTo: 279,
+  buttonArrive: 289,
+  commentClick: 293,
+  closePanel: 300,
+  listArrive: 318,
+  growFrom: 322,
+  growTo: 338,
+  appliedUntil: 364,
 };
+
+const ROW_PADDING = { from: 7, to: 14 };
 
 const ACTIONS: Action[] = [
   { frame: T.tabClick, run: (dom) => (q(dom, '[data-tab="strategies"]') as HTMLElement).click() },
@@ -65,6 +76,14 @@ const ACTIONS: Action[] = [
       const input = sq(dom, 'textarea[aria-label="New comment"]') as HTMLTextAreaElement;
       input.value = COMMENT;
       shadowButton(dom, "Comment")?.click();
+    },
+  },
+  {
+    frame: T.closePanel,
+    run: (dom) => {
+      const { KeyboardEvent } = dom.win as unknown as typeof globalThis;
+      dom.doc.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      (sq(dom, 'button[title="Preview"]') as HTMLElement).click();
     },
   },
 ];
@@ -98,6 +117,7 @@ const targets = (dom: MockDom) => {
     inspect: rectOf(sq(dom, 'button[title="Inspect"]')),
     toolbar: rectOf(sq(dom, ".mk-modes")),
     rows,
+    list: rectOf(q(dom, "#strategy-list")),
     panelTop: panel ? { ...panel, height: Math.min(panel.height, 560) } : null,
     input,
     inputStart: input ? { ...input, x: input.x + 16, width: 0 } : null,
@@ -121,31 +141,29 @@ const measure = (frame: number, dom: MockDom): View => {
   const shots: Shot[] = [
     { frame: 0, focus: FULL, zoom: 1 },
     { frame: 54, travel: 24, focus: center(t.tabs) ?? FULL, zoom: 1.9 },
-    { frame: 122, travel: 22, focus: center(t.toolbar) ?? FULL, zoom: 2.2 },
-    { frame: 164, travel: 24, focus: center(t.dialog) ?? FULL, zoom: 1.15 },
-    { frame: 286, travel: 24, focus: center(t.panelTop) ?? FULL, zoom: 1.6 },
-    { frame: 308, travel: 18, focus: center(t.input) ?? center(t.panelTop) ?? FULL, zoom: 1.75 },
-    { frame: 358, travel: 14, focus: FULL, zoom: 1 },
+    { frame: T.inspectArrive, travel: 22, focus: center(t.toolbar) ?? FULL, zoom: 2.2 },
+    { frame: 156, travel: 22, focus: center(t.dialog) ?? FULL, zoom: 1.15 },
+    { frame: T.panelArrive, travel: 22, focus: center(t.panelTop) ?? FULL, zoom: 1.6 },
+    { frame: T.inputArrive + 2, travel: 18, focus: center(t.input) ?? center(t.panelTop) ?? FULL, zoom: 1.75 },
+    { frame: T.listArrive, travel: 18, focus: center(t.list) ?? FULL, zoom: 1.9 },
   ];
   const camera = cameraAt(frame, shots, 20);
   const row = (i: number) => center(t.rows[i] ?? null);
   const world = pathAt(frame, [
     { frame: T.cursorIn, at: { x: 1180, y: 860 } },
     { frame: T.tabArrive, at: center(t.tab) },
-    { frame: 100, at: center(t.tab) },
+    { frame: T.interactUntil, at: center(t.tab) },
     { frame: T.inspectArrive, at: center(t.inspect) },
-    { frame: 160, at: center(t.inspect) },
+    { frame: T.inspectUntil + 4, at: center(t.inspect) },
     { frame: T.sweep[0], at: center(t.search) },
     { frame: T.sweep[1], at: center(t.tabs) },
     { frame: T.sweep[2], at: row(0) },
-    { frame: T.sweep[3], at: row(1) },
-    { frame: T.sweep[4], at: row(2) },
-    { frame: T.sweep[5], at: row(3) },
-    { frame: T.sweep[6], at: row(0) },
-    { frame: 290, at: row(0) },
+    { frame: T.scrollFrom, at: row(0) },
     { frame: T.inputArrive, at: center(t.inputStart) },
     { frame: T.typeTo + 2, at: center(t.inputStart) },
     { frame: T.buttonArrive, at: center(t.button) },
+    { frame: T.commentClick + 4, at: center(t.button) },
+    { frame: T.listArrive, at: t.list ? { x: (t.list.x + t.list.width + 40) * BASE, y: (t.list.y + t.list.height * 0.6) * BASE } : null },
   ]);
   const { width, height } = { width: 1920, height: 1080 };
   const screen = (p: Point | null) => (p ? toScreen(p, camera, width, height) : toScreen(FULL, camera, width, height));
@@ -156,11 +174,25 @@ const measure = (frame: number, dom: MockDom): View => {
       tab: screen(below(t.tab)),
       inspect: screen(below(t.inspect)),
       input: screen(above(t.input)),
+      list: screen(below(t.rows[t.rows.length - 1] ?? null)),
     },
   };
 };
 
 const applyContinuous = (frame: number, dom: MockDom) => {
+  let rowStyle = dom.doc.getElementById("walkthrough-rows");
+  if (!rowStyle) {
+    rowStyle = dom.doc.createElement("style");
+    rowStyle.id = "walkthrough-rows";
+    dom.doc.head.append(rowStyle);
+  }
+  const padding = interpolate(frame, [T.growFrom, T.growTo], [ROW_PADDING.from, ROW_PADDING.to], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.65, 0, 0.35, 1),
+  });
+  rowStyle.textContent = `#strategy-list .item { padding-block: ${padding}px; }`;
+
   const panel = sq(dom, ".mk-panel") as HTMLElement | null;
   const comments = commentsSection(dom) as HTMLElement | null;
   if (panel && comments && frame >= T.scrollFrom) {
@@ -199,7 +231,7 @@ const MockSceneInner = () => {
       .sync(frame, async (dom) => {
         applyContinuous(frame, dom);
         const next = measure(frame, dom);
-        if (frame >= T.inspectClick) {
+        if (frame >= T.inspectClick && frame < T.commentClick) {
           const { focus, zoom } = next.camera;
           hoverAt(
             dom,
@@ -232,21 +264,26 @@ const MockSceneInner = () => {
       </div>
 
       {anchors.tab ? (
-        <Caption anchor={anchors.tab} frame={frame} from={T.tabClick + 2} to={100} side="below">
+        <Caption anchor={anchors.tab} frame={frame} from={T.tabClick + 2} to={T.interactUntil} side="below">
           Interact with it
         </Caption>
       ) : null}
       {anchors.inspect ? (
-        <Caption anchor={anchors.inspect} frame={frame} from={T.inspectClick + 2} to={158} side="below">
+        <Caption anchor={anchors.inspect} frame={frame} from={T.inspectClick + 2} to={T.inspectUntil} side="below">
           Inspect
         </Caption>
       ) : null}
-      <Caption anchor={{ x: width / 2, y: 890 }} frame={frame} from={T.sweep[0] - 4} to={T.sweep[6]} side="below">
+      <Caption anchor={{ x: width / 2, y: 890 }} frame={frame} from={T.sweep[0] - 4} to={T.rowClick} side="below">
         Every element, named as in code
       </Caption>
       {anchors.input ? (
         <Caption anchor={anchors.input} frame={frame} from={T.inputArrive} to={T.commentClick + 2} side="above">
           Comment on it
+        </Caption>
+      ) : null}
+      {anchors.list ? (
+        <Caption anchor={anchors.list} frame={frame} from={T.growFrom} to={T.appliedUntil} side="below">
+          The agent applies it
         </Caption>
       ) : null}
 
@@ -255,7 +292,7 @@ const MockSceneInner = () => {
           position={view.cursor}
           frame={frame}
           clicks={[T.tabClick, T.inspectClick, T.rowClick, T.inputArrive + 2, T.commentClick]}
-          visible={frame >= T.cursorIn}
+          visible={frame >= T.cursorIn && frame < T.closePanel + 6}
         />
       ) : null}
     </>
