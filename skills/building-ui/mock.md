@@ -1,4 +1,4 @@
-# Draft the mock
+# Mock the component
 
 Input: a spec and one or more sketches, or an existing component to change. Output: `mock.html` and `mock.notes.json` in the component's folder.
 
