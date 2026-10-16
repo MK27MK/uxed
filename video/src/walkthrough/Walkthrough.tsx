@@ -1,5 +1,5 @@
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
-import { useVideoConfig } from "remotion";
+import { Freeze, useVideoConfig } from "remotion";
 import { colors } from "../theme";
 import { ChatScene } from "./ChatScene";
 import { EndCard } from "./EndCard";
@@ -7,7 +7,7 @@ import { ImplementScene } from "./ImplementScene";
 import { MockScene } from "./MockScene";
 import { PulsePresentation } from "./pulse";
 
-const SCENES = { prompt: 241, mock: 519, implement: 166, end: 75 };
+const SCENES = { cover: 1, prompt: 241, mock: 519, implement: 166, end: 75 };
 
 export const Walkthrough = () => {
   const { fps } = useVideoConfig();
@@ -18,9 +18,21 @@ export const Walkthrough = () => {
       timing={linearTiming({ durationInFrames: pulse })}
     />
   );
+  const endCard = (
+    <EndCard
+      style={{
+        backgroundColor: colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    />
+  );
 
   return (
     <TransitionSeries name="Scenes">
+      <TransitionSeries.Sequence name="Cover" durationInFrames={SCENES.cover}>
+        <Freeze frame={SCENES.end - 1}>{endCard}</Freeze>
+      </TransitionSeries.Sequence>
       <TransitionSeries.Sequence name="Prompt" durationInFrames={SCENES.prompt}>
         <ChatScene style={{ backgroundColor: colors.background }} />
       </TransitionSeries.Sequence>
@@ -41,13 +53,7 @@ export const Walkthrough = () => {
       </TransitionSeries.Sequence>
       {transition}
       <TransitionSeries.Sequence name="End" durationInFrames={SCENES.end}>
-        <EndCard
-          style={{
-            backgroundColor: colors.background,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        />
+        {endCard}
       </TransitionSeries.Sequence>
     </TransitionSeries>
   );
