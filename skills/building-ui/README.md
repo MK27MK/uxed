@@ -12,6 +12,10 @@ Use it to mock a new component from a spec and a sketch, in the project's style,
 2. Pick elements, write behaviour rules, comment, edit text and style. Message the agent to apply them.
 3. Approve the mock, then ask the agent to implement it.
 
+### Example
+
+[Strategy search](../../examples/mock-palette/README.md): three sketches and a spec, and the mock they became.
+
 ## App
 
 Inspect, comment on, restyle and rename elements of the running app, with the changes written into code and tests.
