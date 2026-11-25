@@ -107,10 +107,10 @@ article.term.review::before { content: ""; position: absolute; left: -1px; top: 
 .term .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
 .term h3 { font: 400 25px/1.2 var(--serif); margin: 0; overflow-wrap: anywhere; }
 .term h3 code { font-family: var(--serif); }
-.chip { font-size: 11.5px; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-.review .chip { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.chip.ok { display: inline-grid; place-items: center; padding: 0; width: 20px; height: 20px; align-self: center; }
-.chip.ok .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+.badge { font-size: 11.5px; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.review .badge { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.badge.ok { display: inline-grid; place-items: center; padding: 0; width: 20px; height: 20px; align-self: center; }
+.badge.ok .icon { width: 12px; height: 12px; stroke-width: 2.4; }
 .section-tag { font-size: 12px; color: var(--muted); }
 .term .actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .term .def { cursor: text; }
@@ -493,7 +493,7 @@ $("#index").addEventListener("click", e => {
   if (closed.has(l)) { closed.delete(l); store.set("glossary.closed:" + data.path, [...closed]); render(); }
 });
 
-const CHIP = {
+const BADGE = {
   new: ["New", "Added by the agent and not approved yet"],
   changed: ["Changed", "Changed since you approved it; the change is shown below"],
 };
@@ -504,14 +504,14 @@ function termCard(t, many) {
   el.id = "term-" + encodeURIComponent(t.name);
   if (editing.has(t.name)) { el.appendChild(editForm(t)); return el; }
   const open = openComments(t);
-  const chip = toReview(t)
-    ? `<span class="chip" data-tip="${CHIP[t.status][1]}">${CHIP[t.status][0]}</span>`
-    : `<span class="chip ok" data-tip="Approved as it reads now" aria-label="Approved" role="img">${icon("check")}</span>`;
+  const badge = toReview(t)
+    ? `<span class="badge" data-tip="${BADGE[t.status][1]}">${BADGE[t.status][0]}</span>`
+    : `<span class="badge ok" data-tip="Approved as it reads now" aria-label="Approved" role="img">${icon("check")}</span>`;
   const comments = t.comments.length
     ? `${open ? "Comments: " + open + " open" : "Comments"}` : "Comment for the agent";
   el.innerHTML = `<div class="row">
       <h3>${inline(t.name)}</h3>
-      ${chip}
+      ${badge}
       ${many && t.section ? `<span class="section-tag">${esc(t.section)}</span>` : ""}
       <div class="actions">
         ${ibtn("edit", "Edit", 'data-act="edit"', "", "E")}

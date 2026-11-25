@@ -3,7 +3,7 @@
     "Correction": {
       "name": "Correction",
       "aliases": "",
-      "definition": "Anything the user says or does to undo or redirect the agent's work: a message that rejects it, an interruption, a commit of theirs over the agent's text. Every harness change starts from a correction.",
+      "definition": "Anything the user says or does to undo or redirect the agent's work: a message that rejects it, an interruption, a commit of theirs over the agent's text. Every change to the agent setup starts from a correction.",
       "avoid": "Feedback, Complaint"
     }
   },

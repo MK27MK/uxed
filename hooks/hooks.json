@@ -1,5 +1,5 @@
 {
-  "description": "kulmine: forces the kulmine output style, puts it in every subagent and repeats its thesis on every user message; sends back for rewriting a final chat message longer than one sentence; blocks edits to Claude Code configuration until the session has read Claude Code's documentation; in a project with an issue tracker makes the agent open the issue at the start of each piece of work and blocks edits until the session has one; in chat hides the text written between tool calls and the replies sent back by the Stop hook, leaving only the final reply visible.",
+  "description": "kulmine: forces the kulmine output style, puts it in every subagent and repeats its core rule on every user message; sends back for rewriting a final chat message longer than one sentence; blocks edits to Claude Code configuration until the session has read Claude Code's documentation; in a project with an issue tracker makes the agent open the issue at the start of each piece of work and blocks edits until the session has one; in chat hides the text written between tool calls and the replies sent back by the Stop hook, leaving only the final reply visible.",
   "modules": [
     "./chat/hide.tsx"
   ],
