@@ -1,0 +1,25 @@
+# After every push to main, starts the kulmine workflow of the projects that vendor kulmine.
+# Needs the repository variable KULMINE_CONSUMERS (owner/repo names, separated by spaces) and the secret
+# KULMINE_DISPATCH_TOKEN (a token with Actions read and write on those repositories); without them it is skipped.
+name: Update consumers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: vars.KULMINE_CONSUMERS != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start each project's kulmine workflow
+        env:
+          GH_TOKEN: ${{ secrets.KULMINE_DISPATCH_TOKEN }}
+          CONSUMERS: ${{ vars.KULMINE_CONSUMERS }}
+        run: |
+          for repo in $CONSUMERS; do
+            gh workflow run kulmine.yml --repo "$repo" --ref main
+          done

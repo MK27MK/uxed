@@ -10,6 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import vendor  # noqa: E402
 
+for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+    os.environ.setdefault(key, "test" if key.endswith("NAME") else "test@example.com")
+
 ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "test",
@@ -58,68 +61,58 @@ class VendorSyncTest(unittest.TestCase):
             "main",
             "--squash",
         )
+        self.source_url = str(self.source)
         self.vendored = self.consumer / "vendor" / "kulmine" / "skill.md"
         self.addCleanup(self.tmp.cleanup)
 
+    def update(self):
+        return vendor.update(self.consumer, self.source_url)
+
+    def head(self, repo):
+        return run(repo, "rev-parse", "HEAD").stdout.strip()
+
     def test_nothing_to_do_when_already_current(self):
-        self.assertIsNone(vendor.sync(self.source, self.consumer))
+        self.assertIsNone(self.update())
 
     def test_pulls_a_new_commit(self):
         commit(self.source, "skill.md", "second version\n")
-        message = vendor.sync(self.source, self.consumer)
-        self.assertIn("updated", message)
+        self.assertIn("updated", self.update() or "")
         self.assertEqual(self.vendored.read_text(), "second version\n")
-        self.assertEqual(vendor.vendored_commit(self.consumer), vendor.head_commit(self.source))
-        self.assertIsNone(vendor.sync(self.source, self.consumer))
+        self.assertEqual(vendor.vendored_commit(self.consumer), self.head(self.source))
+        self.assertIsNone(self.update())
 
-    def test_leaves_a_dirty_worktree_alone(self):
+    def test_commits_the_registered_hooks(self):
+        (self.source / "hooks").mkdir()
+        (self.source / "output-styles").mkdir()
+        (self.source / "output-styles/kulmine.md").write_text("# kulmine\n")
+        (self.source / "hooks/hooks.json").write_text(json.dumps({"hooks": {"Stop": [
+            {"hooks": [{"type": "command", "command": 'python3 "${CLAUDE_PLUGIN_ROOT}/hooks/chat/chat.py"'}]}]}}))
+        run(self.source, "add", "-A")
+        run(self.source, "commit", "-m", "Add hooks")
+        message = self.update() or ""
+        self.assertIn("settings.json", message)
+        self.assertEqual(run(self.consumer, "status", "--porcelain").stdout, "")
+        settings = json.loads((self.consumer / ".claude/settings.json").read_text())
+        self.assertIn("vendor/kulmine/hooks/chat/chat.py", settings["hooks"]["Stop"][0]["hooks"][0]["command"])
+
+    def test_refuses_a_dirty_worktree(self):
         commit(self.source, "skill.md", "second version\n")
         (self.consumer / "README.md").write_text("changed\n")
-        message = vendor.sync(self.source, self.consumer)
-        self.assertIn("uncommitted", message)
+        with self.assertRaises(RuntimeError):
+            self.update()
         self.assertEqual(self.vendored.read_text(), "first version\n")
 
-    def test_leaves_another_branch_alone(self):
-        commit(self.source, "skill.md", "second version\n")
-        run(self.consumer, "switch", "-c", "feature")
-        message = vendor.sync(self.source, self.consumer)
-        self.assertIn("branch feature", message)
-        self.assertEqual(self.vendored.read_text(), "first version\n")
+    def test_unreachable_source_is_an_error(self):
+        self.source_url = str(Path(self.tmp.name) / "missing")
+        with self.assertRaises(RuntimeError):
+            self.update()
 
     def test_ignores_a_project_without_the_subtree(self):
         other = Path(self.tmp.name) / "other"
         other.mkdir()
         run(other, "init", "-b", "main")
         commit(other, "README.md", "other\n")
-        self.assertIsNone(vendor.sync(self.source, other))
-
-    def test_source_side_updates_every_registered_project(self):
-        run(self.source, "config", "--add", "kulmine.consumer", str(self.consumer))
-        commit(self.source, "skill.md", "second version\n")
-        cwd = Path.cwd()
-        os.chdir(self.source)
-        try:
-            messages = vendor.source_side()
-        finally:
-            os.chdir(cwd)
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(self.vendored.read_text(), "second version\n")
-
-    def test_consumer_side_finds_the_source_from_the_environment(self):
-        commit(self.source, "skill.md", "second version\n")
-        env = {"CLAUDE_PROJECT_DIR": str(self.consumer), "KULMINE_SOURCE": str(self.source)}
-        previous = {key: os.environ.get(key) for key in env}
-        os.environ.update(env)
-        try:
-            messages = vendor.consumer_side()
-        finally:
-            for key, value in previous.items():
-                if value is None:
-                    os.environ.pop(key, None)
-                else:
-                    os.environ[key] = value
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(self.vendored.read_text(), "second version\n")
+        self.assertIsNone(vendor.update(other, self.source_url))
 
 
 class RegisterTest(unittest.TestCase):
@@ -170,12 +163,9 @@ class RegisterTest(unittest.TestCase):
         return json.loads(self.settings.read_text())
 
     def test_writes_the_vendored_hooks(self):
-        self.assertIn("settings.json", vendor.register(self.consumer))
+        self.assertIn("settings.json", vendor.register(self.consumer) or "")
         hooks = self.read()["hooks"]
-        self.assertEqual(
-            hooks["SessionStart"][0]["hooks"][0]["command"],
-            'python3 -I "$CLAUDE_PROJECT_DIR/vendor/kulmine/hooks/vendor/vendor.py"',
-        )
+        self.assertNotIn("SessionStart", hooks)
         prompt = hooks["UserPromptSubmit"][0]["hooks"][0]["command"]
         self.assertTrue(prompt.startswith('[ "$CLAUDE_CODE_REMOTE" != true ] || '))
         self.assertIn("$CLAUDE_PROJECT_DIR/vendor/kulmine/hooks/kulmine/kulmine.py", prompt)

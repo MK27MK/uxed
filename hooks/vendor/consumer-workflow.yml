@@ -1,0 +1,29 @@
+# Keeps vendor/kulmine on kulmine's main. Copy it to .github/workflows/kulmine.yml in the project.
+# kulmine's "Update consumers" workflow starts it after every push to kulmine's main; the schedule is the net.
+name: kulmine
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kulmine
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Update vendor/kulmine
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python3 -I vendor/kulmine/hooks/vendor/vendor.py
+          git push origin HEAD:main
