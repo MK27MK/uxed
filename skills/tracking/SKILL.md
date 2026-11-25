@@ -13,13 +13,13 @@ Every piece of work in a project with a tracker starts from its issue: feature, 
 
 ## Titles
 
-An issue's title, its page's `<title>` and its PR's title are the same sentence:
+An issue's title, its page's `<title>` and its PR's title say the same sentence, each in its own language (`language.tracker`, `language.chat`, `language.work` in the config):
 
-- imperative, verb first, in the config's `language`;
+- imperative, verb first;
 - capitalized only at the start and in proper nouns, without prefixes, brackets, IDs or a trailing period, at most 60 characters;
 - states the result, not the activity: `Merge the design docs into the design page`, not `Design docs`, `[UI] design cleanup` or `Investigate design docs`.
 
-Title, description and page text are in the `language`; the chat stays in the user's language.
+Issue title, description and comments are in `language.tracker`; the page follows the chat.
 
 ## Opening an issue
 
