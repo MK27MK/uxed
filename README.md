@@ -15,19 +15,24 @@
   </dl>
 </blockquote>
 
-A Claude Code plugin that corrects the agent's habits (agreeing with you, adding things nobody asked for, declaring its own work good) and makes it answer with HTML pages instead of walls of text.
+kulmine puts you on the summit: you hold the vision, Claude Code does the climbing.
 
-It follows the method of Thariq ([@trq212](https://x.com/trq212)), from the Claude Code team: *thin prompts, thick artifacts + context, thin skills*.
+It gets you there through the method of Thariq ([@trq212](https://x.com/trq212)), from the Claude Code team: *thin prompts, thick artifacts + context, thin skills*. The agent answers in one sentence and puts everything else on an interactive HTML page. It also drops the habits that drag you back down into the details: agreeing with you, asking you useless stuff, grading its own work.
 
 - [Using Claude Code: the unreasonable effectiveness of HTML](https://claude.dev/blog/using-claude-code-the-unreasonable-effectiveness-of-html/)
 - [The examples](https://thariqs.github.io/html-effectiveness/)
-- [Know your unknowns](https://thariqs.github.io/html-effectiveness/unknowns/index.html)
 
-## What it does
+## Paradigm shift: your first climb
 
-- **Style**: one sentence in chat. Everything else is a page published as an Artifact, which lives in its issue tracker issue or, without a tracker, in `.kulmine/pages/`: you choose on it with cards and option buttons, and your choices go back to the agent.
-- **Hooks**: send back a chat message longer than one sentence, block edits to Claude Code configuration until the session has read the docs, and, in a project with a tracker, make every piece of work start from its issue.
-- **Skills**: `interview-me` (questions that become a spec), `teaching` (what you don't know you don't know), `prototyping` (options to see and pick), `researching`, `tracking` (Linear issues with imperative titles), `domain-modeling` (the `GLOSSARY.md`), `orchestrate` and `analyzing-sessions`.
+One person can now do the work of a dozen roles without having trained for any of them. The danger is doing it blind. Say you need a pricing page and have never touched marketing, design or billing.
+
+You describe what you want, and `teaching` answers the way a pricing consultant would. It gives you the words you were missing, *anchoring*, *decoy tier*, *proration*, so your next prompt sounds like you've done this before. The idea comes from Felix Rieseberg's [How to be more ambitious](https://felixrieseberg.com/how-to-be-more-ambitious-a-tutorial-for-humans-with-models/).
+
+The agent's questions arrive as a page from `interview-me`, and your answers become the spec. Three ways to lay out the tiers? `prototyping` draws all three and you click the one you want.
+
+While it builds, the chat stays quiet: one sentence with the result and a link to a page with the rest, filed in its Linear issue by `tracking` (or in `.kulmine/pages/` if you don't use a tracker). Hooks hold it to that. A reply longer than one sentence goes back to be rewritten, and the session can't edit the Claude Code configuration before reading the docs or start work that has no issue.
+
+For the rest of the climb there's `researching` (primary sources), `domain-modeling` (a `GLOSSARY.md` with its own interactive page), `wait-what` (for a reply that didn't land), `orchestrate` (jobs too big for one agent) and `analyzing-sessions` (the places where you had to correct the agent). The first three are adapted from Matt Pocock's [skills](https://github.com/mattpocock/skills).
 
 ## Installation
 
@@ -71,4 +76,4 @@ git subtree add --prefix vendor/kulmine https://github.com/MK27MK/kulmine.git ma
 mkdir -p .github/workflows && cp vendor/kulmine/hooks/vendor/consumer-workflow.yml .github/workflows/kulmine.yml
 ```
 
-Commit and push to `main`, then run the `kulmine` workflow once from the Actions tab. From then on it updates `vendor/kulmine` every day and pushes the commit to `main`; nothing to do by hand.
+Commit and push to `main`, then run the `kulmine` workflow once from the Actions tab. From then on it updates `vendor/kulmine` every day and pushes the commit to `main` on its own.
