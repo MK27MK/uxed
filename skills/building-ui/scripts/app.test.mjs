@@ -69,12 +69,12 @@ test("lists the classes the project defines in plain stylesheets", async () => {
   assert.deepEqual(await response.json(), ["toolbar"]);
 });
 
-test("keeps the notes in a self-ignoring .uxed folder of the project", async () => {
+test("keeps the notes in a self-ignoring .kulmine/ui folder of the project", async () => {
   const notes = { elements: {}, edits: { "button.root": { style: { color: "red" } } }, renames: {} };
   const put = await fetch(`${base}/__mock/notes`, { method: "PUT", body: JSON.stringify(notes) });
   assert.equal(put.status, 204);
-  assert.deepEqual(JSON.parse(await readFile(join(root, ".uxed", "notes.json"), "utf8")), notes);
-  assert.equal(await readFile(join(root, ".uxed", ".gitignore"), "utf8"), "*\n");
+  assert.deepEqual(JSON.parse(await readFile(join(root, ".kulmine", "ui", "notes.json"), "utf8")), notes);
+  assert.equal(await readFile(join(root, ".kulmine", "ui", ".gitignore"), "utf8"), "*\n");
 });
 
 const requestWithHost = (host, { method = "GET", body } = {}) => new Promise((resolve, reject) => {
@@ -88,10 +88,10 @@ const requestWithHost = (host, { method = "GET", body } = {}) => new Promise((re
 
 test("refuses requests addressed to any host but the loopback, as DNS rebinding sends them", async () => {
   const { port } = new URL(base);
-  const before = await readFile(join(root, ".uxed", "notes.json"), "utf8");
+  const before = await readFile(join(root, ".kulmine", "ui", "notes.json"), "utf8");
   const body = JSON.stringify({ elements: {}, edits: { x: { style: { color: "red" } } }, renames: {} });
   assert.equal(await requestWithHost(`attacker.example:${port}`, { method: "PUT", body }), 403);
-  assert.equal(await readFile(join(root, ".uxed", "notes.json"), "utf8"), before);
+  assert.equal(await readFile(join(root, ".kulmine", "ui", "notes.json"), "utf8"), before);
   assert.equal(await requestWithHost(`localhost:${port}`), 200);
 });
 

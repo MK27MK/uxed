@@ -13,7 +13,7 @@ const PORT_ATTEMPTS = 20;
 const MAX_BODY_BYTES = 1_000_000;
 const MOCK_FILE = "mock.html";
 const NOTES_FILE = "mock.notes.json";
-const APP_NOTES_DIR = ".uxed";
+const APP_NOTES_DIR = join(".kulmine", "ui");
 const APP_NOTES_FILE = "notes.json";
 const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 const RELOAD_DEBOUNCE_MS = 150;
@@ -231,7 +231,7 @@ function listen(server, port) {
 const USAGE = `Usage:
   serve.mjs <component-folder> [--port n]            serve the folder's mock.html
   serve.mjs --app <app-url> [--root dir] [--port n]
-                                                     serve the shell to the running app; notes go to <root>/.uxed/notes.json`;
+                                                     serve the shell to the running app; notes go to <root>/.kulmine/ui/notes.json`;
 
 function parseArgs(argv) {
   const options = { root: process.cwd() };

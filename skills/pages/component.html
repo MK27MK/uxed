@@ -1,0 +1,267 @@
+<!-- kulmine:component:start -->
+<style data-kulmine>
+/* Interactive components shared by kulmine pages. They take their colours from the page tokens
+   (--bg, --surface, --ink, --muted, --line, --accent) and fall back if those are missing. */
+.k { --k-bg: var(--bg, #f3f4f6); --k-surface: var(--surface, #fff); --k-ink: var(--ink, #161a22); --k-muted: var(--muted, #5b6372);
+  --k-line: var(--line, #d9dde4); --k-accent: var(--accent, #2f4fd8); --k-ok: var(--ok, #157f3b); color: var(--k-ink); }
+.k *, .k *::before, .k *::after { box-sizing: border-box; }
+.k-card { background: var(--k-surface); border: 1px solid var(--k-line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; transition: opacity .15s, transform .15s; }
+.k-card.k-leaving { opacity: 0; transform: translateY(4px); }
+.k-iv { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; align-items: start; }
+.k-rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 2px; }
+.k-eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--k-muted); }
+.k-rail .k-eyebrow { margin-bottom: 6px; }
+.k-ri { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: none; border: 0; padding: 7px 8px; border-radius: 7px; color: var(--k-muted); font: inherit; font-size: 14px; cursor: default; }
+.k-ri.k-done { color: var(--k-ink); cursor: pointer; }
+.k-ri.k-done:hover { background: color-mix(in srgb, var(--k-accent) 12%, transparent); }
+.k-ri.k-cur { background: var(--k-surface); color: var(--k-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--k-line); }
+.k-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--k-c, var(--k-accent)); flex: none; opacity: .45; }
+.k-ri.k-done .k-dot, .k-ri.k-cur .k-dot { opacity: 1; }
+.k-ri span:nth-child(2) { flex: 1; min-width: 0; }
+.k-tick { color: var(--k-ok); font-size: 13px; }
+.k-meta { margin-top: 10px; font-size: 12px; color: var(--k-muted); }
+.k-qhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.k-badge { color: var(--k-surface); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; background: var(--k-c, var(--k-accent)); }
+.k-qnum { font-size: 12px; color: var(--k-muted); }
+.k-q { font-size: clamp(19px, 2.6vw, 23px); line-height: 1.25; margin: 0; text-wrap: balance; }
+.k-why { margin: 0; color: var(--k-muted); max-width: 70ch; }
+.k-opts { display: flex; flex-direction: column; gap: 8px; }
+.k-opt { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 10px; text-align: left; width: 100%; background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 9px; padding: 12px 14px; font: inherit; color: var(--k-ink); cursor: pointer; }
+.k-opt:hover { border-color: var(--k-accent); }
+.k button:focus-visible, .k input:focus-visible, .k textarea:focus-visible, .k-chip:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 2px; }
+.k-opt.k-on { border-color: var(--k-accent); background: color-mix(in srgb, var(--k-accent) 12%, var(--k-surface)); box-shadow: inset 0 0 0 1px var(--k-accent); }
+.k-key { grid-row: span 2; font-size: 12px; color: var(--k-muted); border: 1px solid var(--k-line); border-radius: 5px; height: 22px; display: grid; place-items: center; background: var(--k-surface); }
+.k-opt.k-on .k-key { background: var(--k-accent); color: var(--k-surface); border-color: var(--k-accent); }
+.k-ot { font-weight: 600; }
+.k-od { color: var(--k-muted); font-size: 14px; }
+.k-rec .k-ot::after { content: "recommended"; margin-left: 8px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--k-accent); border: 1px solid var(--k-accent); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; }
+.k-field { display: flex; flex-direction: column; gap: 6px; }
+.k-field label { font-size: 13px; color: var(--k-muted); }
+.k input[type=text], .k textarea { width: 100%; font: inherit; color: var(--k-ink); background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 8px; padding: 10px 12px; resize: vertical; }
+.k-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.k-btn { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--k-line); background: var(--k-surface); color: var(--k-ink); }
+.k-btn.k-primary { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-surface); }
+.k-btn:disabled { opacity: .4; cursor: default; }
+.k-hint { font-size: 13px; color: var(--k-muted); }
+.k-tscroll { overflow-x: auto; }
+.k table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.k th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--k-muted); padding: 8px 10px; border-bottom: 1px solid var(--k-line); }
+.k td { padding: 10px; border-bottom: 1px solid var(--k-line); vertical-align: top; }
+.k td.k-dec { font-weight: 600; }
+.k td.k-dec small { display: block; font-weight: 400; color: var(--k-muted); font-size: 13px; margin-top: 2px; }
+.k td.k-area { white-space: nowrap; }
+.k-link { font: inherit; font-size: 13px; background: none; border: 0; color: var(--k-accent); cursor: pointer; padding: 0; }
+.k-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-chip { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--k-line); background: var(--k-surface); color: var(--k-muted); cursor: pointer; }
+.k-chip.k-on { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-surface); }
+.k-reply pre { margin: 0; background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 9px; padding: 14px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; color: var(--k-ink); }
+.k-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.k-status { font-size: 13px; color: var(--k-muted); }
+.k-status.k-good { color: var(--k-ok); }
+@media (max-width: 760px) {
+  .k-iv { grid-template-columns: minmax(0, 1fr); }
+  .k-rail { position: static; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 4px; }
+  .k-rail .k-eyebrow, .k-meta { display: none; }
+  .k-ri { width: auto; white-space: nowrap; flex: none; }
+  .k-card { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .k-card { transition: none; } }
+</style>
+<script data-kulmine>
+/* kulmine: choices made on a page go back to the agent.
+   - kulmine.put(id, label, value, note?) records a reply entry (empty value = remove it).
+   - kulmine.interview(el, {questions, areas}) runs an interview, one question at a time.
+   - Every element with data-k-id gets chips: data-k-label (name in the reply), data-k-options ("keep,drop").
+   - <div data-k-reply data-k-title="..."> shows the composed reply, with Save (the Artifact's db) and Copy. */
+(function () {
+  "use strict";
+  var items = {}, order = [], listeners = [], extra = "";
+  var KEY = "kulmine:" + location.pathname + ":" + document.title;
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
+  var draft = load();
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(draft)); } catch (e) {} }
+  function changed() { listeners.forEach(function (f) { f(); }); }
+
+  function put(id, label, value, note) {
+    if (order.indexOf(id) === -1) order.push(id);
+    if (value === null || value === undefined || value === "" || (Array.isArray(value) && !value.length && !note)) delete items[id];
+    else items[id] = { label: label, value: Array.isArray(value) ? value.join(", ") : String(value), note: note || "" };
+    changed();
+  }
+
+  function compose(title) {
+    var L = [title || ("Reply from: " + document.title), ""];
+    order.forEach(function (id, i) {
+      var it = items[id]; if (!it) return;
+      L.push("- " + it.label + ": " + it.value);
+      if (it.note) L.push("  Note: " + it.note);
+    });
+    if (!Object.keys(items).length) L.push("(no choices)");
+    if (extra.trim()) { L.push(""); L.push("Other: " + extra.trim()); }
+    return L.join("\n");
+  }
+
+  var db = null, dbTried = false;
+  function getDb() {
+    if (dbTried) return Promise.resolve(db);
+    dbTried = true;
+    if (!window.claude || typeof window.claude.use !== "function") return Promise.resolve(null);
+    return window.claude.use("db").then(function (d) { db = d; return d; }, function () { return null; });
+  }
+
+  function mountReply(el) {
+    var title = el.getAttribute("data-k-title") || "";
+    el.classList.add("k", "k-reply");
+    el.innerHTML = '<div class="k-card"><div class="k-eyebrow">Your reply</div><pre tabindex="0"></pre>' +
+      '<div class="k-field"><label>Anything else the agent should know (optional)</label><textarea rows="2"></textarea></div>' +
+      '<div class="k-row"><button type="button" class="k-btn k-primary" data-act="save" hidden>Save for the agent</button>' +
+      '<button type="button" class="k-btn" data-act="copy">Copy</button><span class="k-status"></span></div></div>';
+    var pre = el.querySelector("pre"), ta = el.querySelector("textarea"), status = el.querySelector(".k-status"), save = el.querySelector('[data-act="save"]');
+    ta.value = draft.extra || ""; extra = ta.value;
+    function render() { pre.textContent = compose(title); }
+    listeners.push(render); render();
+    ta.addEventListener("input", function () { extra = ta.value; draft.extra = extra; persist(); render(); });
+    function say(t, good) { status.textContent = t; status.className = "k-status" + (good ? " k-good" : ""); }
+    getDb().then(function (d) { if (d) { save.hidden = false; say("Save, then type \"done\" in the chat."); } else say("Copy and paste it into the chat."); });
+    save.addEventListener("click", function () {
+      if (!db) return;
+      save.disabled = true;
+      var text = compose(title), list = order.filter(function (id) { return items[id]; }).map(function (id) { return { id: id, label: items[id].label, value: items[id].value, note: items[id].note }; });
+      db.doc("replies/latest").set({ text: text, items: list, extra: extra, at: new Date().toISOString() })
+        .then(function () { say("Saved ✓ Type \"done\" in the chat.", true); }, function (e) { say("Not saved (" + ((e && e.code) || "error") + "): use Copy."); })
+        .then(function () { save.disabled = false; });
+    });
+    el.querySelector('[data-act="copy"]').addEventListener("click", function () {
+      var text = compose(title);
+      function select() { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); say("Text selected: press ⌘C / Ctrl+C."); }
+      try { navigator.clipboard.writeText(text).then(function () { say("Copied ✓ Paste it into the chat.", true); }, select); } catch (e) { select(); }
+    });
+  }
+
+  function mountChips(el) {
+    var id = el.getAttribute("data-k-id"), label = el.getAttribute("data-k-label") || id;
+    var opts = (el.getAttribute("data-k-options") || "keep,drop").split(",").map(function (s) { return s.trim(); });
+    var row = document.createElement("div"); row.className = "k k-chips";
+    var cur = (draft.chips || {})[id] || "";
+    opts.forEach(function (o) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "k-chip" + (o === cur ? " k-on" : ""); b.textContent = o;
+      b.setAttribute("aria-pressed", o === cur);
+      b.addEventListener("click", function () {
+        cur = cur === o ? "" : o;
+        row.querySelectorAll(".k-chip").forEach(function (x) { var on = x.textContent === cur; x.classList.toggle("k-on", on); x.setAttribute("aria-pressed", on); });
+        draft.chips = draft.chips || {}; draft.chips[id] = cur; persist();
+        put(id, label, cur);
+      });
+      row.appendChild(b);
+    });
+    el.appendChild(row);
+    put(id, label, cur);
+  }
+
+  function interview(root, cfg) {
+    var Q = cfg.questions, A = cfg.areas || {};
+    var saved = (draft.iv || {})[root.id || "iv"];
+    var answers = saved && saved.length === Q.length ? saved : Q.map(function () { return null; });
+    var current = answers.findIndex(function (a) { return !a; }); if (current < 0) current = Q.length;
+    var moving = false;
+    root.classList.add("k");
+    root.innerHTML = '<div class="k-iv"><nav class="k-rail" aria-label="Progress"></nav><section aria-live="polite"></section></div>';
+    var rail = root.querySelector(".k-rail"), stage = root.querySelector("section");
+    function area(q) { return A[q.area] || { label: q.area || "", color: "" }; }
+    function count() { return answers.filter(Boolean).length; }
+    function text(q, a) { return q.multi ? (a.list.length ? a.list.join(", ") : "none from the list") + (a.extra ? "; also: " + a.extra : "") : a.text + (a.custom ? " [my own words]" : ""); }
+    function sync() {
+      draft.iv = draft.iv || {}; draft.iv[root.id || "iv"] = answers; persist();
+      Q.forEach(function (q, i) { var a = answers[i]; put("iv:" + q.id, q.topic || q.q, a ? text(q, a) : "", a && a.note); });
+    }
+    function drawRail() {
+      var h = '<div class="k-eyebrow">Progress</div>';
+      Q.forEach(function (q, i) {
+        var c = area(q).color;
+        h += '<button type="button" class="k-ri' + (i === current ? " k-cur" : "") + (answers[i] ? " k-done" : "") + '" data-i="' + i + '"' + (c ? ' style="--k-c:' + c + '"' : "") + '><span class="k-dot"></span><span>' + esc(q.short || q.topic) + '</span>' + (answers[i] ? '<span class="k-tick">✓</span>' : "") + '</button>';
+      });
+      var all = count() === Q.length;
+      h += '<button type="button" class="k-ri' + (current === Q.length ? " k-cur" : "") + (all ? " k-done" : "") + '" data-i="' + Q.length + '" style="--k-c:var(--k-ok)"><span class="k-dot"></span><span>Summary</span></button>';
+      h += '<div class="k-meta"><b>' + count() + '</b> of ' + Q.length + ' answered</div>';
+      rail.innerHTML = h;
+      rail.querySelectorAll(".k-ri.k-done").forEach(function (b) { b.addEventListener("click", function () { go(+b.dataset.i); }); });
+    }
+    function drawQ() {
+      var q = Q[current], a = answers[current], ar = area(q);
+      var on = q.multi ? ((a && a.list) || []) : (a && !a.custom ? [a.text] : []);
+      var h = '<div class="k-card"><div class="k-qhead">' + (ar.label ? '<span class="k-badge"' + (ar.color ? ' style="--k-c:' + ar.color + '"' : "") + '>' + esc(ar.label) + '</span>' : "") +
+        '<span class="k-qnum">Question ' + (current + 1) + ' of ' + Q.length + (q.multi ? " · multiple choice" : "") + '</span></div>' +
+        '<h2 class="k-q">' + esc(q.q) + '</h2>' + (q.why ? '<p class="k-why">' + esc(q.why) + '</p>' : "") + '<div class="k-opts">';
+      q.opts.forEach(function (o, i) {
+        var p = on.indexOf(o.t) !== -1;
+        h += '<button type="button" class="k-opt' + (p ? " k-on" : "") + (o.rec ? " k-rec" : "") + '" data-o="' + i + '" aria-pressed="' + p + '"><span class="k-key">' + (i + 1) + '</span><span class="k-ot">' + esc(o.t) + '</span>' + (o.d ? '<span class="k-od">' + esc(o.d) + '</span>' : "") + '</button>';
+      });
+      h += '</div><div class="k-field"><label for="k-o-' + q.id + '">' + (q.multi ? "Anything to add (optional)" : "Other: write your own answer") + '</label><input type="text" id="k-o-' + q.id + '" value="' + esc(a && a.custom ? a.text : (a && a.extra) || "") + '"></div>' +
+        '<div class="k-field"><label for="k-n-' + q.id + '">Note (optional)</label><textarea id="k-n-' + q.id + '" rows="2">' + esc((a && a.note) || "") + '</textarea></div>' +
+        '<div class="k-nav"><button type="button" class="k-btn" data-act="back"' + (current ? "" : " disabled") + '>← Back</button><span class="k-hint">' + (q.multi ? "Pick as many as you like, then Next" : "Pick a card or press 1–" + q.opts.length) + '</span><button type="button" class="k-btn k-primary" data-act="next">' + (current === Q.length - 1 ? "Summary →" : "Next →") + '</button></div></div>';
+      stage.innerHTML = h;
+      var other = stage.querySelector("input"), note = stage.querySelector("textarea");
+      function commit(base) {
+        var n = note.value.trim(), o = other.value.trim();
+        if (q.multi) {
+          var list = Array.prototype.map.call(stage.querySelectorAll(".k-opt.k-on"), function (b) { return q.opts[+b.dataset.o].t; });
+          answers[current] = list.length || o ? { list: list, extra: o, note: n } : null;
+        } else if (base) answers[current] = { text: base, custom: false, note: n };
+        else if (o) answers[current] = { text: o, custom: true, note: n };
+        else if (answers[current]) answers[current].note = n;
+        sync();
+      }
+      stage._pick = function (i) {
+        var b = stage.querySelector('.k-opt[data-o="' + i + '"]'); if (!b || moving) return;
+        if (q.multi) { b.classList.toggle("k-on"); b.setAttribute("aria-pressed", b.classList.contains("k-on")); commit(); drawRail(); return; }
+        other.value = "";
+        stage.querySelectorAll(".k-opt").forEach(function (x) { x.classList.remove("k-on"); x.setAttribute("aria-pressed", "false"); });
+        b.classList.add("k-on"); b.setAttribute("aria-pressed", "true");
+        commit(q.opts[i].t); drawRail();
+        moving = true; setTimeout(function () { moving = false; go(current + 1); }, 260);
+      };
+      stage.querySelectorAll(".k-opt").forEach(function (b) { b.addEventListener("click", function () { stage._pick(+b.dataset.o); }); });
+      other.addEventListener("keydown", function (e) { if (e.key === "Enter") { commit(); if (answers[current]) go(current + 1); } });
+      note.addEventListener("input", function () { if (answers[current]) { answers[current].note = note.value.trim(); sync(); } });
+      stage.querySelector('[data-act="back"]').addEventListener("click", function () { commit(); go(current - 1); });
+      stage.querySelector('[data-act="next"]').addEventListener("click", function () { commit(); if (answers[current]) go(current + 1); else other.focus(); });
+    }
+    function drawSummary() {
+      var rows = Q.map(function (q, i) {
+        var a = answers[i], ar = area(q);
+        return '<tr><td class="k-area">' + (ar.label ? '<span class="k-dot" style="display:inline-block;opacity:1;margin-right:6px' + (ar.color ? ";--k-c:" + ar.color : "") + '"></span>' + esc(ar.label) : "") + '</td><td>' + esc(q.topic || q.q) + '</td><td class="k-dec">' + (a ? esc(text(q, a)) + (a.note ? "<small>" + esc(a.note) + "</small>" : "") : '<span style="color:var(--k-muted);font-weight:400">no answer</span>') + '</td><td><button type="button" class="k-link" data-i="' + i + '">edit</button></td></tr>';
+      }).join("");
+      stage.innerHTML = '<div class="k-card"><div class="k-qhead"><span class="k-badge" style="--k-c:var(--k-ok)">Summary</span><span class="k-qnum">' + count() + ' of ' + Q.length + ' answered</span></div>' +
+        '<div class="k-tscroll"><table><thead><tr><th>Area</th><th>Question</th><th>Decision</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<p class="k-hint">The reply to send to the agent is further down.</p></div>';
+      stage._pick = null;
+      stage.querySelectorAll(".k-link").forEach(function (b) { b.addEventListener("click", function () { go(+b.dataset.i); }); });
+    }
+    function go(i) {
+      if (moving) return;
+      var card = stage.querySelector(".k-card");
+      function draw() {
+        moving = false;
+        current = Math.max(0, Math.min(i, Q.length));
+        drawRail(); if (current === Q.length) drawSummary(); else drawQ();
+        var top = root.getBoundingClientRect().top + scrollY - 16; if (scrollY > top) scrollTo({ top: top });
+      }
+      if (card) { moving = true; card.classList.add("k-leaving"); setTimeout(draw, 150); } else draw();
+    }
+    document.addEventListener("keydown", function (e) {
+      var t = e.target.tagName; if (t === "INPUT" || t === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey || !root.contains(document.activeElement) && document.activeElement !== document.body) return;
+      var n = parseInt(e.key, 10); if (stage._pick && n >= 1 && n <= 9) { e.preventDefault(); stage._pick(n - 1); }
+    });
+    sync(); go(current);
+  }
+
+  window.kulmine = { put: put, interview: interview, compose: compose };
+  function boot() {
+    document.querySelectorAll("[data-k-id]").forEach(mountChips);
+    document.querySelectorAll("[data-k-reply]").forEach(mountReply);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+})();
+</script>
+<!-- kulmine:component:end -->
