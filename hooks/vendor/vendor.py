@@ -1,29 +1,24 @@
 #!/usr/bin/env python3
-"""Keep the vendored copy of kulmine up to date in the projects that use it.
+"""Bring a project's vendored copy of kulmine up to date with kulmine's `main` on GitHub.
 
 Claude Code cloud sessions do not load plugins, so projects that use kulmine keep
-a copy of it as a git subtree in `vendor/kulmine`. That copy goes stale with every
-commit on `main` here: this script brings it up to date by itself.
+a copy of it as a git subtree in `vendor/kulmine`. The project's GitHub Actions
+workflow (`consumer-workflow.yml`, installed as `.github/workflows/kulmine.yml`)
+runs this script on `main` and pushes the result, so the copy follows every merge
+on GitHub without depending on anyone's clone:
 
-Two sides, same job:
+1. pulls kulmine's `main` into `vendor/kulmine` (`git subtree pull --squash`) if
+   the copy is behind;
+2. rewrites kulmine's hooks into the project's `.claude/settings.json` from the
+   vendored `hooks/hooks.json`, so a new hook needs no registering by hand, and
+   relinks the output style; commits that too.
 
-- source side, from kulmine's git hooks (`--source-side`): after a commit, merge
-  or rebase on `main`, updates the subtree of every project registered with
-  `git config --add kulmine.consumer <path>`;
-- project side, from the project's SessionStart hook (no arguments): at session
-  start updates its `vendor/kulmine` if it is behind, as a net for commits that
-  arrived while the project was dirty or on another branch.
-
-After the update it rewrites kulmine's hooks into the project's
-`.claude/settings.json` from the vendored copy's `hooks/hooks.json`, so a new hook
-does not need registering by hand, and relinks its output style.
-
-When it cannot update (dirty worktree, branch other than `main`) it touches
-nothing and says so: the message ends up in the session's context.
+    vendor.py [--source URL] [--root DIR]
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -32,22 +27,11 @@ from pathlib import Path
 
 PREFIX = "vendor/kulmine"
 BRANCH = "main"
+SOURCE = "https://github.com/MK27MK/kulmine.git"
 SETTINGS = ".claude/settings.json"
 STYLE = ".claude/output-styles/kulmine.md"
 # kulmine's hooks are needed only where the plugin is missing: cloud sessions.
 CLOUD_ONLY = '[ "$CLAUDE_CODE_REMOTE" != true ] || '
-SYNC_HOOK = {
-    "matcher": "startup|resume",
-    "hooks": [
-        {
-            "type": "command",
-            "command": f'python3 -I "$CLAUDE_PROJECT_DIR/{PREFIX}/hooks/vendor/vendor.py"',
-            "timeout": 60,
-        }
-    ],
-}
-
-
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", "-C", str(repo), *args],
@@ -70,8 +54,10 @@ def toplevel(start: Path) -> Path | None:
     return Path(path) if path else None
 
 
-def head_commit(source: Path) -> str | None:
-    return out(source, "rev-parse", f"refs/heads/{BRANCH}")
+def head_commit(consumer: Path, source: str) -> str | None:
+    """The commit of kulmine's `main` at `source`, a URL or a path."""
+    listed = out(consumer, "ls-remote", source, f"refs/heads/{BRANCH}")
+    return listed.split()[0] if listed else None
 
 
 def vendored_commit(consumer: Path) -> str | None:
@@ -99,50 +85,36 @@ def is_clean(consumer: Path) -> bool:
     return git(consumer, "diff-index", "--quiet", "HEAD", "--").returncode == 0
 
 
-def current_branch(consumer: Path) -> str | None:
-    return out(consumer, "rev-parse", "--abbrev-ref", "HEAD")
-
-
-def pull(source: Path, consumer: Path) -> str | None:
+def pull(source: str, consumer: Path) -> str | None:
     """Update `vendor/kulmine` in `consumer`. None if it was already current."""
-    head = head_commit(source)
-    if head is None or vendored_commit(consumer) == head:
+    head = head_commit(consumer, source)
+    if head is None:
+        raise RuntimeError(f"cannot read {BRANCH} of {source}")
+    if vendored_commit(consumer) == head:
         return None
-
-    name = consumer.name
-    short = head[:7]
-    command = f"cd {consumer} && git subtree pull --prefix {PREFIX} {source} {BRANCH} --squash"
-    branch = current_branch(consumer)
-    if branch != BRANCH:
-        return f"{name}: {PREFIX} is behind (kulmine {short}) but the project is on branch {branch}; update it on {BRANCH} with `{command}`."
     if not is_clean(consumer):
-        return f"{name}: {PREFIX} is behind (kulmine {short}) but the worktree has uncommitted changes; once it is clean, update it with `{command}`."
-
-    result = git(
-        consumer,
-        "subtree",
-        "pull",
-        "--prefix",
-        PREFIX,
-        str(source),
-        BRANCH,
-        "--squash",
-        "-m",
-        f"Update vendor/kulmine to {short}",
-    )
+        raise RuntimeError(f"{consumer.name} has uncommitted changes")
+    short = head[:7]
+    result = git(consumer, "subtree", "pull", "--prefix", PREFIX, source, BRANCH, "--squash",
+                 "-m", f"Update vendor/kulmine to {short}")
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip().splitlines()
-        tail = detail[-1] if detail else "git subtree pull failed"
-        return f"{name}: updating {PREFIX} failed ({tail}); fix it with `{command}`."
-    return f"{name}: {PREFIX} updated to kulmine {short}."
+        raise RuntimeError(detail[-1] if detail else "git subtree pull failed")
+    return f"{PREFIX} updated to kulmine {short}."
 
 
-def sync(source: Path, consumer: Path) -> str | None:
-    """Update the vendored copy and its registration. None if nothing was needed."""
+def update(consumer: Path, source: str = SOURCE) -> str | None:
+    """Pull kulmine and commit the hooks it registers. None if nothing was needed."""
     if not has_vendor(consumer):
         return None
-    messages = [pull(source, consumer), register(consumer)]
-    done = [message for message in messages if message]
+    pulled = pull(source, consumer)
+    registered = register(consumer)
+    if registered:
+        git(consumer, "add", "--", SETTINGS, STYLE)
+        result = git(consumer, "commit", "-m", "Register kulmine's hooks", "--", SETTINGS, STYLE)
+        if result.returncode != 0:
+            raise RuntimeError((result.stderr or result.stdout).strip() or "git commit failed")
+    done = [message for message in (pulled, registered) if message]
     return " ".join(done) if done else None
 
 
@@ -157,7 +129,7 @@ def kulmine_hooks(consumer: Path) -> dict[str, list[dict]] | None:
     if not manifest.is_file():
         return None
     spec = json.loads(manifest.read_text())["hooks"]
-    events: dict[str, list[dict]] = {"SessionStart": [dict(SYNC_HOOK)]}
+    events: dict[str, list[dict]] = {}
     for event, entries in spec.items():
         events.setdefault(event, [])
         for entry in entries:
@@ -212,55 +184,24 @@ def register(consumer: Path) -> str | None:
 
     if not changed:
         return None
-    return f"{consumer.name}: {' and '.join(changed)} brought in line with kulmine's hooks."
-
-
-def consumers(source: Path) -> list[Path]:
-    listed = out(source, "config", "--get-all", "kulmine.consumer") or ""
-    return [Path(line).expanduser() for line in listed.splitlines() if line.strip()]
-
-
-def find_source(consumer: Path) -> Path | None:
-    """The kulmine clone to update from, if there is one on this machine."""
-    candidates = [
-        os.environ.get("KULMINE_SOURCE"),
-        out(consumer, "config", "--get", "kulmine.source"),
-        "~/.claude/skills/kulmine",
-    ]
-    for candidate in candidates:
-        if not candidate:
-            continue
-        path = Path(candidate).expanduser()
-        if not path.is_dir():
-            continue
-        root = toplevel(path.resolve())
-        if root is not None and root != consumer and head_commit(root):
-            return root
-    return None
-
-
-def source_side() -> list[str]:
-    source = toplevel(Path.cwd())
-    if source is None or current_branch(source) != BRANCH:
-        return []
-    return [message for path in consumers(source) if (message := sync(source, path))]
-
-
-def consumer_side() -> list[str]:
-    start = os.environ.get("CLAUDE_PROJECT_DIR") or str(Path.cwd())
-    consumer = toplevel(Path(start))
-    if consumer is None:
-        return []
-    source = find_source(consumer)
-    if source is None:
-        return []
-    message = sync(source, consumer)
-    return [message] if message else []
+    return f"{' and '.join(changed)} brought in line with kulmine's hooks."
 
 
 def main(argv: list[str]) -> int:
-    for message in source_side() if "--source-side" in argv else consumer_side():
-        print(f"kulmine vendor: {message}")
+    parser = argparse.ArgumentParser(prog="vendor.py")
+    parser.add_argument("--source", default=SOURCE)
+    parser.add_argument("--root", default=".")
+    args = parser.parse_args(argv)
+    consumer = toplevel(Path(args.root))
+    if consumer is None:
+        print(f"kulmine vendor: {args.root} is not a git repository", file=sys.stderr)
+        return 1
+    try:
+        message = update(consumer, args.source)
+    except RuntimeError as error:
+        print(f"kulmine vendor: {error}", file=sys.stderr)
+        return 1
+    print(f"kulmine vendor: {message or 'already current'}")
     return 0
 
 

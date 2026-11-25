@@ -43,3 +43,17 @@ To work on it: [CONTRIBUTING.md](CONTRIBUTING.md).
 `language` has three parts: `tracker` for issues (default English), `work` for what gets committed, code, docs, commits and PRs (default English), `chat` for the chat, pages and Artifacts (default `adaptive`, the language of the user's last message). Each takes a language code; the old single string still works and sets `tracker` and `work`. With `tracker`, work pages live in the issues; without it, they stay in `.kulmine/pages/`.
 
 Set `KULMINE_STYLE=off` in the environment to silence the style hooks.
+
+## Cloud sessions
+
+Claude Code sessions in the cloud don't load plugins, so without this they run without kulmine. A project that wants kulmine there keeps a copy of it in `vendor/kulmine`, and a GitHub Actions workflow keeps that copy current and registers its hooks and style in the project's `.claude/settings.json`, active only in cloud sessions (locally the plugin does the job).
+
+```bash
+git subtree add --prefix vendor/kulmine https://github.com/MK27MK/kulmine.git main --squash
+```
+
+```bash
+mkdir -p .github/workflows && cp vendor/kulmine/hooks/vendor/consumer-workflow.yml .github/workflows/kulmine.yml
+```
+
+Commit and push to `main`, then run the `kulmine` workflow once from the Actions tab. From then on it updates `vendor/kulmine` every day and pushes the commit to `main`; nothing to do by hand.
