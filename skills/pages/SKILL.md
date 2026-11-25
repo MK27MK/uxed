@@ -11,7 +11,7 @@ Every page is a project file, published as an Artifact: the file is the context 
 2. **Write.** Follow the Artifact tool's page contract. Design the page around its subject and define the tokens `--bg --surface --ink --muted --line --accent` (for the dark theme too): the shared components use them.
 3. **Collect the choices.** If the page asks the user something, put `<!-- kulmine:component -->` before your scripts and run `python3 "${CLAUDE_SKILL_DIR}/scripts/pages.py" inline <file>`, which copies `component.html` into it; run it again after every change to the component. Then use:
    - `kulmine.interview(el, {areas, questions})`: one question at a time, with a summary. `areas`: `{key: {label, color}}`. Each question: `{id, area, short, topic, q, why, multi, opts: [{t, d, rec}]}`.
-   - `data-k-id`, `data-k-label`, `data-k-options="keep,drop"` on an element: choice chips.
+   - `data-k-id`, `data-k-label`, `data-k-options="keep,drop"` on an element: option buttons to choose from.
    - `kulmine.put(id, label, value, note)`: an entry of the reply from a control of yours; send only what changed.
    - `<div data-k-reply data-k-title="…">` at the bottom, always: it composes the reply, saves it for you and lets the user copy it.
 4. **Publish.** Artifact tool with the project file as `file_path` and, if the component is there, `capabilities: {db: {}}`. After the first publish write `<meta name="kulmine:artifact" content="<url>">` next to the `<title>`: a later session reads the URL from there, re-reads the Artifact and republishes to the same link.

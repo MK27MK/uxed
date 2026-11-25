@@ -142,7 +142,7 @@ class Glossary(unittest.TestCase):
         order = self.term(self.get("/api/glossary"), "Order")
         (self.root / "GLOSSARY.md").write_text(self.text().replace("paid or not", "once paid"))
         status, _ = self.post("/api/save", {"old_name": "Order", "base": order["hash"], "name": "Order",
-                                            "definition": "Mine.", "avoid": ""})
+                                            "definition": "My version.", "avoid": ""})
         self.assertEqual(status, 409)
         self.assertIn("once paid", self.text())
 

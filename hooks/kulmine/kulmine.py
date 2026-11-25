@@ -6,8 +6,8 @@ in the system prompt even after compaction. This script carries it where the out
 `hook_event_name`:
 
 - `SubagentStart`: injects the whole style into every subagent, which has a system prompt of its own.
-- `UserPromptSubmit`: on every user message injects the thesis, the style's first paragraph, so the rules stay close
-  to the reply they govern and the thesis cannot drift from the text.
+- `UserPromptSubmit`: on every user message injects the core rule, the style's first paragraph, so the rules stay close
+  to the reply they govern and the core rule cannot drift from the text.
 
 Both events also carry the project's three languages (`language` in `.kulmine/config.json`, read by `pages.py`), so
 the agent writes issues, committed work and chat each in its own.
@@ -36,7 +36,7 @@ def body(text: str) -> str:
     return text
 
 
-def thesis(text: str) -> str:
+def core_rule(text: str) -> str:
     """The first paragraph after the heading."""
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip() and not p.lstrip().startswith("#")]
     return paragraphs[0] if paragraphs else ""
@@ -62,7 +62,7 @@ def languages(cwd: Path) -> str:
 
 def context(event: str, text: str, cwd: Path) -> str:
     if event == "UserPromptSubmit":
-        return "kulmine style active. " + thesis(text) + "\n\n" + languages(cwd)
+        return "kulmine style active. " + core_rule(text) + "\n\n" + languages(cwd)
     return text.strip() + "\n\n" + languages(cwd)
 
 

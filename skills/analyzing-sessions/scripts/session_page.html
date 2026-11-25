@@ -66,7 +66,7 @@ pre.io { font: 12px/1.45 var(--mono); color: var(--fg); background: var(--surfac
 .tool-hidden .tool { display: none; }
 .tool-hidden .tool.asks, .tool-hidden .tool.has-note { display: flex; }
 
-/* A comment is a sub-chat under the message it quotes: the quote on top, then the user's and agent's bubbles, then a reply box. */
+/* A comment opens a thread under the message it quotes: the quote on top, then the user's and agent's bubbles, then a reply box. */
 .note { align-self: stretch; margin-inline: 24px; box-sizing: border-box; background: var(--note); border: 1px solid var(--note-line); border-radius: 12px;
   padding: 8px 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
 .note .quote { font-size: 13px; color: var(--muted); border-left: 3px solid var(--note-line); padding-left: 8px;
@@ -123,7 +123,7 @@ const ROLE = { user: "You", agent: "Agent", tool: "Tool", system: "App / hook", 
 const ASKS = ["AskUserQuestion", "ExitPlanMode"];
 const byId = Object.fromEntries(SESSION.items.map(item => [item.id, item]));
 let comments = [];   // saved comments: {key, msg, n, quote, text, at, reply?}
-let replies = [];    // later turns of each sub-chat: {key, comment, role: "user" | "agent", text, at}
+let replies = [];    // later turns of each thread: {key, comment, role: "user" | "agent", text, at}
 let draft = null;    // {msg, quote, key?, text}: the comment being written or edited
 const replyDrafts = {};   // unsent reply text by comment key, kept across re-renders
 let db = null;
@@ -169,7 +169,7 @@ function content(item) {
     <div class="io-label">Input</div><pre class="io" data-text>${esc(item.input)}</pre>${result}</details>`;
 }
 
-// A comment's sub-chat: its text, the agent's first answer when the comment holds one as `reply`, then the `replies` documents.
+// A comment's thread: its text, the agent's first answer when the comment holds one as `reply`, then the `replies` documents.
 function thread(c) {
   const later = replies.filter(r => r.comment === c.key).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   return [{ role: "user", text: c.text }, ...(c.reply ? [{ role: "agent", text: c.reply }] : []), ...later];
@@ -219,13 +219,13 @@ function render() {
   const open = new Set([...document.querySelectorAll("details.call[open]")].map(d => d.closest(".msg").dataset.id));
   const list = $("#list");
   list.innerHTML = SESSION.items.map(item => {
-    const mine = comments.filter(c => c.msg === item.id);
+    const notes = comments.filter(c => c.msg === item.id);
     const editingNew = draft && !draft.key && draft.msg === item.id;
-    const classes = ["msg", item.role, ASKS.includes(item.tool) ? "asks" : "", mine.length || editingNew ? "has-note" : ""].join(" ");
+    const classes = ["msg", item.role, ASKS.includes(item.tool) ? "asks" : "", notes.length || editingNew ? "has-note" : ""].join(" ");
     return `<section class="${classes}" id="m${item.n}" data-id="${esc(item.id)}">
       <div class="who"><span>${ROLE[item.role]}</span><span>#${item.n}</span><time>${when(item.at)}</time></div>
       ${content(item)}
-      ${mine.map(noteHtml).join("")}${editingNew ? editorHtml() : ""}
+      ${notes.map(noteHtml).join("")}${editingNew ? editorHtml() : ""}
     </section>`;
   }).join("");
   for (const id of open) list.querySelector(`[data-id="${CSS.escape(id)}"] details.call`)?.setAttribute("open", "");

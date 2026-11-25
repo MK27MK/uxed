@@ -28,7 +28,7 @@
 .k-opts { display: flex; flex-direction: column; gap: 8px; }
 .k-opt { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 10px; text-align: left; width: 100%; background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 9px; padding: 12px 14px; font: inherit; color: var(--k-ink); cursor: pointer; }
 .k-opt:hover { border-color: var(--k-accent); }
-.k button:focus-visible, .k input:focus-visible, .k textarea:focus-visible, .k-chip:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 2px; }
+.k button:focus-visible, .k input:focus-visible, .k textarea:focus-visible, .k-option:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 2px; }
 .k-opt.k-on { border-color: var(--k-accent); background: color-mix(in srgb, var(--k-accent) 12%, var(--k-surface)); box-shadow: inset 0 0 0 1px var(--k-accent); }
 .k-key { grid-row: span 2; font-size: 12px; color: var(--k-muted); border: 1px solid var(--k-line); border-radius: 5px; height: 22px; display: grid; place-items: center; background: var(--k-surface); }
 .k-opt.k-on .k-key { background: var(--k-accent); color: var(--k-surface); border-color: var(--k-accent); }
@@ -51,9 +51,9 @@
 .k td.k-dec small { display: block; font-weight: 400; color: var(--k-muted); font-size: 13px; margin-top: 2px; }
 .k td.k-area { white-space: nowrap; }
 .k-link { font: inherit; font-size: 13px; background: none; border: 0; color: var(--k-accent); cursor: pointer; padding: 0; }
-.k-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.k-chip { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--k-line); background: var(--k-surface); color: var(--k-muted); cursor: pointer; }
-.k-chip.k-on { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-surface); }
+.k-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-option { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--k-line); background: var(--k-surface); color: var(--k-muted); cursor: pointer; }
+.k-option.k-on { background: var(--k-accent); border-color: var(--k-accent); color: var(--k-surface); }
 .k-reply pre { margin: 0; background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 9px; padding: 14px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; color: var(--k-ink); }
 .k-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .k-status { font-size: 13px; color: var(--k-muted); }
@@ -71,7 +71,7 @@
 /* kulmine: choices made on a page go back to the agent.
    - kulmine.put(id, label, value, note?) records a reply entry (empty value = remove it).
    - kulmine.interview(el, {questions, areas}) runs an interview, one question at a time.
-   - Every element with data-k-id gets chips: data-k-label (name in the reply), data-k-options ("keep,drop").
+   - Every element with data-k-id gets option buttons: data-k-label (name in the reply), data-k-options ("keep,drop").
    - <div data-k-reply data-k-title="..."> shows the composed reply, with Save (the Artifact's db) and Copy. */
 (function () {
   "use strict";
@@ -139,18 +139,18 @@
     });
   }
 
-  function mountChips(el) {
+  function mountOptions(el) {
     var id = el.getAttribute("data-k-id"), label = el.getAttribute("data-k-label") || id;
     var opts = (el.getAttribute("data-k-options") || "keep,drop").split(",").map(function (s) { return s.trim(); });
-    var row = document.createElement("div"); row.className = "k k-chips";
-    var cur = (draft.chips || {})[id] || "";
+    var row = document.createElement("div"); row.className = "k k-options";
+    var cur = (draft.options || {})[id] || "";
     opts.forEach(function (o) {
-      var b = document.createElement("button"); b.type = "button"; b.className = "k-chip" + (o === cur ? " k-on" : ""); b.textContent = o;
+      var b = document.createElement("button"); b.type = "button"; b.className = "k-option" + (o === cur ? " k-on" : ""); b.textContent = o;
       b.setAttribute("aria-pressed", o === cur);
       b.addEventListener("click", function () {
         cur = cur === o ? "" : o;
-        row.querySelectorAll(".k-chip").forEach(function (x) { var on = x.textContent === cur; x.classList.toggle("k-on", on); x.setAttribute("aria-pressed", on); });
-        draft.chips = draft.chips || {}; draft.chips[id] = cur; persist();
+        row.querySelectorAll(".k-option").forEach(function (x) { var on = x.textContent === cur; x.classList.toggle("k-on", on); x.setAttribute("aria-pressed", on); });
+        draft.options = draft.options || {}; draft.options[id] = cur; persist();
         put(id, label, cur);
       });
       row.appendChild(b);
@@ -258,7 +258,7 @@
 
   window.kulmine = { put: put, interview: interview, compose: compose };
   function boot() {
-    document.querySelectorAll("[data-k-id]").forEach(mountChips);
+    document.querySelectorAll("[data-k-id]").forEach(mountOptions);
     document.querySelectorAll("[data-k-reply]").forEach(mountReply);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();

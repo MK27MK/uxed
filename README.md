@@ -10,7 +10,7 @@ It follows the method of Thariq ([@trq212](https://x.com/trq212)), from the Clau
 
 ## What it does
 
-- **Style**: one sentence in chat. Everything else is a page published as an Artifact, which lives in its issue tracker issue or, without a tracker, in `.kulmine/pages/`: you choose on it with cards and chips, and your choices go back to the agent.
+- **Style**: one sentence in chat. Everything else is a page published as an Artifact, which lives in its issue tracker issue or, without a tracker, in `.kulmine/pages/`: you choose on it with cards and option buttons, and your choices go back to the agent.
 - **Hooks**: send back a chat message longer than one sentence, block edits to Claude Code configuration until the session has read the docs, and, in a project with a tracker, make every piece of work start from its issue.
 - **Skills**: `interview-me` (questions that become a spec), `teaching` (what you don't know you don't know), `prototyping` (options to see and pick), `researching`, `tracking` (Linear issues with imperative titles), `domain-modeling` (the `GLOSSARY.md`), `orchestrate` and `analyzing-sessions`.
 

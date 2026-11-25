@@ -4,7 +4,7 @@
 Reads a transcript (`~/.claude/projects/<project>/<session>.jsonl`), keeps the user's turns, the
 agent's text and its tool calls with their results, and writes `session_page.html` filled with them.
 The page saves each comment in the artifact's `comments` collection, one document per comment, which
-the agent reads back with `ArtifactData`. Each comment is a sub-chat: the later turns, the agent's
+the agent reads back with `ArtifactData`. Each comment opens a thread: the later turns, the agent's
 answers and the user's follow-up questions, are documents in the `replies` collection.
 
     python3 session_page.py PATH.jsonl -o OUT.html

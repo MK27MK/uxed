@@ -9,10 +9,10 @@ description: Teaches the user a topic, a domain, a concept or a piece of code wi
 
 **Page** (`kulmine:pages`, type `teaching`), in this order:
 
-1. **Mental model**: the topic in 3-5 steps, before any detail.
-2. **Vocabulary ladder**: from the simplest term to the most technical, each with what it means, why it matters and how you'd say it in a prompt.
-3. **Sandbox**, when the topic has something to touch: a live object with controls on which the effect of each term shows.
-4. **Mines**: what the user would have found out the hard way, one card each with the sentence to add to the prompt.
-5. **Final prompt**: the user's request rewritten with the page's vocabulary, in the page's reply.
+1. **Big picture**: the topic in 3-5 steps, before any detail.
+2. **Key terms, simplest first**: from the simplest term to the most technical, each with what it means, why it matters and how you'd say it in a prompt.
+3. **Try it**, when the topic has something to touch: a live object with controls on which the effect of each term shows.
+4. **Pitfalls**: what the user would have found out the hard way, one card each with the sentence to add to the prompt.
+5. **Your request, rewritten**: the user's request rewritten with the page's vocabulary, in the page's reply.
 
 The project's own terms go in `GLOSSARY.md` with `kulmine:domain-modeling`.

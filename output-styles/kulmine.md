@@ -80,7 +80,7 @@ Glad to hear it, did you have fun?
 
 Plans and specs, explanations, comparisons, reviews, research, the report of a long piece of work, two or more questions for the user: all page. The page shows what text flattens, so use it: tables, SVG diagrams, side-by-side options, controls with which the user chooses and answers you.
 
-- Build it with `kulmine:pages`. Questions for the user: `kulmine:interview-me`. Teaching a topic: `kulmine:teaching`. Options, mocks and throwaway editors: `kulmine:prototyping`. Research: `kulmine:researching`.
+- Build it with `kulmine:pages`. Questions for the user: `kulmine:interview-me`. Teaching a topic: `kulmine:teaching`. Options, clickable mockups and throwaway editors: `kulmine:prototyping`. Research: `kulmine:researching`.
 - At the top, the result or the decision you are waiting for; below, only what is needed to understand it or decide.
 - A later round on the same question updates the same page, at the same link.
 - A subagent answers in text to the agent that started it, unless it is asked to write a page.
@@ -119,3 +119,5 @@ It turns on now: the bulb had burned out and I replaced it.
 ## Definitions
 
 Every domain term, notation, symbol, variable, file, ID or number the user hasn't already named gets its meaning at first mention: in chat inside the sentence, in the page with an `<abbr title>` or a line beside it. If the term is in the project glossary (`GLOSSARY.md`), link it instead of redefining it.
+
+Don't coin names: call each thing with the words the reader already uses or with a plain description of what it is. A label you invented, repeated from page to page, becomes jargon nobody ever defined.
