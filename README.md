@@ -1,5 +1,20 @@
 # kulmine
 
+<p align="center">
+  <img src="docs/images/wanderer-above-the-sea-of-fog.jpg" alt="Wanderer above the Sea of Fog by Caspar David Friedrich: a man in a dark coat stands on a rocky summit, his back to the viewer, looking out over a sea of fog" width="420">
+  <br>
+  <sub><i>Wanderer above the Sea of Fog</i>, Caspar David Friedrich, c. 1818. Public domain, via <a href="https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg">Wikimedia Commons</a>.</sub>
+</p>
+
+<blockquote>
+  <dl>
+    <dt><b>culmine</b> &nbsp;/ˈkul.mi.ne/&nbsp; <code>KOOL-mee-neh</code> &nbsp;<i>noun, masculine (Italian)</i></dt>
+    <dd>1. The highest point of something physical; the summit, peak or top of a mountain or building.</dd>
+    <dd>2. <i>Figurative.</i> The height or climax of something: the point of greatest intensity, success or perfection.</dd>
+    <dd><sub>From Latin <i>culmen, culminis</i>, “top, summit, roof-ridge”; related to English <i>culminate</i>.</sub></dd>
+  </dl>
+</blockquote>
+
 A Claude Code plugin that corrects the agent's habits (agreeing with you, adding things nobody asked for, declaring its own work good) and makes it answer with HTML pages instead of walls of text.
 
 It follows the method of Thariq ([@trq212](https://x.com/trq212)), from the Claude Code team: *thin prompts, thick artifacts + context, thin skills*.
@@ -30,7 +45,7 @@ For a single project add `--scope local` to both. It activates at the next sessi
 
 The skills alone, for any agent, with [skills](https://github.com/vercel-labs/skills): `npx skills add MK27MK/kulmine`. The style and the hooks need Claude Code.
 
-To work on it: [CONTRIBUTING.md](CONTRIBUTING.md).
+Want to push it further? [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Configuration
 
