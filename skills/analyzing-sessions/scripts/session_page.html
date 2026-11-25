@@ -1,0 +1,351 @@
+<meta charset="utf-8">
+<title>Session review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* A chat: the user's bubbles on the right, the agent's on the left; comments sit under the bubble they quote. */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --fg: #1a1d23; --muted: #646b78; --line: #dde1e8;
+  --accent: #2550c8; --user: #2550c8; --user-fg: #ffffff; --note: #fff4c9; --note-line: #e6cf74; --mark: #ffe58a; --error: #b42318;
+  --sans: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14161a; --surface: #1f2228; --fg: #e6e8ec; --muted: #9aa1ad; --line: #2e333c;
+  --accent: #8aa8ff; --user: #2f4fa8; --user-fg: #f2f5ff; --note: #3a3218; --note-line: #7a6624; --mark: #6b5a17; --error: #ff8a80; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14161a; --surface: #1f2228; --fg: #e6e8ec; --muted: #9aa1ad; --line: #2e333c;
+  --accent: #8aa8ff; --user: #2f4fa8; --user-fg: #f2f5ff; --note: #3a3218; --note-line: #7a6624; --mark: #6b5a17; --error: #ff8a80; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); }
+main { max-width: 860px; margin: 0 auto; padding-block: 24px 120px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { display: grid; gap: 6px; margin-bottom: 12px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.meta { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.meta code { font: 12px var(--mono); overflow-wrap: anywhere; }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding-block: 10px; margin-bottom: 20px; font-size: 13px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.bar label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.bar .status { margin-left: auto; color: var(--muted); }
+.list { display: flex; flex-direction: column; gap: 14px; }
+
+.msg { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.msg.user { align-items: flex-end; }
+.who { font-size: 12px; color: var(--muted); display: flex; gap: 8px; font-variant-numeric: tabular-nums; padding-inline: 4px; }
+.bubble { max-width: min(78%, 640px); min-width: 0; border-radius: 16px; padding: 9px 14px; overflow-wrap: anywhere; }
+.bubble .plain { white-space: pre-wrap; }
+.bubble > :first-child { margin-top: 0; } .bubble > :last-child { margin-bottom: 0; }
+.bubble p, .bubble ul, .bubble ol, .bubble blockquote, .bubble table { margin: 0 0 .6em; }
+.bubble ul, .bubble ol { padding-left: 1.3em; } .bubble li + li { margin-top: .2em; }
+.bubble h1, .bubble h2, .bubble h3, .bubble h4 { font-size: 1em; font-weight: 600; margin: .8em 0 .3em; }
+.bubble blockquote { border-left: 3px solid currentColor; opacity: .8; padding-left: 10px; margin-left: 0; }
+.bubble table { border-collapse: collapse; display: block; overflow-x: auto; font-size: 13.5px; }
+.bubble th, .bubble td { border: 1px solid var(--line); padding: 3px 8px; text-align: left; vertical-align: top; }
+.bubble a { color: inherit; text-decoration: underline; }
+.bubble hr { border: none; border-top: 1px solid var(--line); }
+.user .bubble code, .user .bubble pre { background: rgb(255 255 255 / .15); border-radius: 4px; }
+.user .bubble th, .user .bubble td { border-color: rgb(255 255 255 / .35); }
+.agent .bubble { background: var(--surface); border: 1px solid var(--line); border-top-left-radius: 4px; }
+.user .bubble { background: var(--user); color: var(--user-fg); border-top-right-radius: 4px; }
+.user .bubble ::selection { background: var(--user-fg); color: var(--user); }
+.system .bubble, .summary .bubble { background: transparent; border: 1px dashed var(--line); color: var(--muted); font-size: 13px; }
+.bubble code { font: 13px var(--mono); }
+.bubble pre { font: 12.5px/1.45 var(--mono); background: var(--bg); border-radius: 6px; padding: 8px 10px; margin: 4px 0; white-space: pre-wrap; }
+mark { background: var(--mark); color: inherit; border-radius: 2px; }
+.user mark { color: var(--fg); }
+
+.tool { gap: 2px; }
+.tool .who { display: none; }
+details.call { max-width: min(78%, 640px); min-width: 0; font-size: 13px; color: var(--muted); }
+details.call summary { cursor: pointer; font-family: var(--mono); overflow-wrap: anywhere; padding-inline: 4px; }
+details.call summary b { font-weight: 500; color: var(--accent); }
+details.call.err summary b { color: var(--error); }
+.io-label { font-size: 11px; color: var(--muted); margin-top: 8px; text-transform: uppercase; letter-spacing: .06em; }
+pre.io { font: 12px/1.45 var(--mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+  margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; }
+.tool-hidden .tool { display: none; }
+.tool-hidden .tool.asks, .tool-hidden .tool.has-note { display: flex; }
+
+/* A comment is a sub-chat under the message it quotes: the quote on top, then the user's and agent's bubbles, then a reply box. */
+.note { align-self: stretch; margin-inline: 24px; box-sizing: border-box; background: var(--note); border: 1px solid var(--note-line); border-radius: 12px;
+  padding: 8px 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.note .quote { font-size: 13px; color: var(--muted); border-left: 3px solid var(--note-line); padding-left: 8px;
+  white-space: pre-wrap; overflow-wrap: anywhere; max-height: 5.5em; overflow: hidden; }
+.note .tb { max-width: 85%; border-radius: 14px; padding: 6px 11px; overflow-wrap: anywhere; }
+.note .tb.user { align-self: flex-end; background: var(--user); color: var(--user-fg); border-top-right-radius: 4px; white-space: pre-wrap; }
+.note .tb.agent { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-top-left-radius: 4px; }
+.note .tb.agent > :last-child { margin-bottom: 0; } .note .tb.agent p { margin: 0 0 .5em; }
+.note .tb.agent code { font: 12.5px var(--mono); }
+.note .actions { display: flex; gap: 6px; justify-content: flex-end; }
+.note .actions.root { margin-top: -2px; }
+.note .actions.root button { border: none; background: none; color: var(--muted); padding: 0 4px; font-size: 12px; }
+.note .compose { display: flex; gap: 6px; align-items: flex-end; }
+.note textarea { flex: 1; width: 100%; box-sizing: border-box; min-height: 36px; font: inherit; color: var(--fg); background: var(--surface);
+  border: 1px solid var(--note-line); border-radius: 8px; padding: 6px 8px; resize: vertical; }
+.note.editing textarea { min-height: 72px; }
+button { font: inherit; font-size: 12.5px; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  border-radius: 6px; padding: 2px 9px; cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#pop { position: fixed; z-index: 20; font-size: 13px; padding: 4px 12px; border-radius: 999px; background: var(--fg); color: var(--bg); border: none;
+  box-shadow: 0 4px 14px rgb(0 0 0 / .18); }
+#pop:hover { color: var(--bg); opacity: .9; }
+.offline { color: var(--error); }
+@media (max-width: 520px) { .bubble, details.call, .note { max-width: 92%; width: auto; } .note { width: 92%; } }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding-block: 2px; }
+</style>
+<style>/*KATEX_CSS*/</style>
+
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <div class="meta"><span id="counts"></span><code id="sid"></code></div>
+  </header>
+  <div class="bar">
+    <label><input type="checkbox" id="show-tools"> Show tool calls</label>
+    <button id="next">Next comment</button>
+    <span class="status" id="status">Connecting to the comment store…</span>
+  </div>
+  <div class="list tool-hidden" id="list"></div>
+</main>
+<button id="pop" hidden>Comment</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.19.0/katex.min.js"></script>
+<script>
+const SESSION = /*SESSION*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ROLE = { user: "You", agent: "Agent", tool: "Tool", system: "App / hook", summary: "Compaction summary" };
+// Tools whose result holds the user's answer stay visible even when the other calls are hidden.
+const ASKS = ["AskUserQuestion", "ExitPlanMode"];
+const byId = Object.fromEntries(SESSION.items.map(item => [item.id, item]));
+let comments = [];   // saved comments: {key, msg, n, quote, text, at, reply?}
+let replies = [];    // later turns of each sub-chat: {key, comment, role: "user" | "agent", text, at}
+let draft = null;    // {msg, quote, key?, text}: the comment being written or edited
+const replyDrafts = {};   // unsent reply text by comment key, kept across re-renders
+let db = null;
+
+const when = iso => iso ? new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "";
+const excerpt = item => (item.role === "tool" ? `${item.tool} ${item.input}` : item.text).slice(0, 300);
+
+// Code spans first, so math inside them stays text; then $$…$$, \[…\], \(…\) and $…$. An inline $ opens only before
+// a non-space character and closes only after one and before a non-digit, so "$5 and $10" stays text.
+const MATH = /(```[\s\S]*?```|`[^`\n]+`)|\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?=[^\s$])((?:\\.|[^$\\\n])+?)(?<=[^\s\\])\$(?!\d)/g;
+
+// Full Markdown via marked, sanitized by DOMPurify; raw HTML in a message shows as text. Plain text if the CDN is unreachable.
+// Math is kept out of marked, whose escapes would eat its backslashes, and rendered by KaTeX inside the sanitized HTML.
+function markdown(text) {
+  if (!window.marked || !window.DOMPurify) return `<div class="plain">${esc(text)}</div>`;
+  const math = [];
+  const held = !window.katex ? text : text.replace(MATH, (all, code, d1, d2, i1, i2) => {
+    if (code) return all;
+    math.push({ tex: d1 ?? d2 ?? i1 ?? i2, display: d1 != null || d2 != null });
+    return `KMATH${math.length - 1}X`;
+  });
+  const html = DOMPurify.sanitize(marked.parse(held), { FORBID_TAGS: ["img", "style", "form", "input"] });
+  return html.replace(/KMATH(\d+)X/g, (_, i) =>
+    katex.renderToString(math[i].tex, { displayMode: math[i].display, throwOnError: false, output: "html" }));
+}
+if (window.marked) marked.use({ gfm: true, breaks: true, renderer: { html: html => esc(typeof html === "string" ? html : html.text) } });
+
+function toolSummary(item) {
+  let input = {};
+  try { input = JSON.parse(item.input); } catch {}
+  const hint = input.description || input.command || input.file_path || input.query || input.prompt || input.skill || "";
+  return `<b>${esc(item.tool)}</b> ${esc(String(hint).split("\n")[0].slice(0, 140))}`;
+}
+
+function content(item) {
+  // A compaction summary is as long as a chapter and is nobody's message: collapsed, it opens with a click.
+  if (item.role === "summary") return `<details class="call"><summary>The context ran out here; the agent carried on from this summary
+    (${item.text.length.toLocaleString()} characters)</summary><div class="bubble" data-text>${markdown(item.text)}</div></details>`;
+  if (item.role !== "tool") return `<div class="bubble" data-text>${markdown(item.text)}</div>`;
+  const result = item.result == null ? "" :
+    `<div class="io-label">${item.error ? "Error" : "Result"}</div><pre class="io" data-text>${esc(item.result)}</pre>`;
+  return `<details class="call${item.error ? " err" : ""}"><summary>${toolSummary(item)}</summary>
+    <div class="io-label">Input</div><pre class="io" data-text>${esc(item.input)}</pre>${result}</details>`;
+}
+
+// A comment's sub-chat: its text, the agent's first answer when the comment holds one as `reply`, then the `replies` documents.
+function thread(c) {
+  const later = replies.filter(r => r.comment === c.key).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  return [{ role: "user", text: c.text }, ...(c.reply ? [{ role: "agent", text: c.reply }] : []), ...later];
+}
+
+function noteHtml(c) {
+  if (draft && draft.key === c.key) return editorHtml();
+  const bubbles = thread(c).map(m => m.role === "agent"
+    ? `<div class="tb agent">${markdown(m.text)}</div>` : `<div class="tb user">${esc(m.text)}</div>`).join("");
+  return `<div class="note" data-key="${esc(c.key)}"><div class="quote">${esc(c.quote)}</div>${bubbles}
+    <div class="actions root"><button data-act="edit">Edit comment</button><button data-act="delete">Delete</button></div>
+    <div class="compose"><textarea data-reply="${esc(c.key)}" rows="1" aria-label="Reply to the agent" placeholder="Reply…">${esc(replyDrafts[c.key] || "")}</textarea>
+    <button class="primary" data-act="reply">Send</button></div></div>`;
+}
+
+function editorHtml() {
+  return `<div class="note editing"><div class="quote">${esc(draft.quote)}</div>
+    <textarea id="draft" aria-label="Your comment">${esc(draft.text || "")}</textarea>
+    <div class="actions"><button data-act="cancel">Cancel</button><button class="primary" data-act="save">Save</button></div></div>`;
+}
+
+// Highlights each comment's quote inside its message, even when the rendered Markdown splits it across bold, code or list items.
+// Whitespace is ignored in the match, because a selection's text and the DOM's text differ in line breaks.
+function highlight(section, quotes) {
+  const root = section.querySelector("[data-text]") || section;
+  for (const quote of quotes) {
+    const nodes = [], chars = [];   // chars: the message's non-space characters, each with its node and offset
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      nodes.push(node);
+      for (let i = 0; i < node.data.length; i++) if (!/\s/.test(node.data[i])) chars.push([node, i, node.data[i]]);
+    }
+    const needle = quote.replace(/\s+/g, "");
+    const at = chars.map(c => c[2]).join("").indexOf(needle);
+    if (!needle || at < 0) continue;
+    const [first, start] = chars[at], [last, end] = chars[at + needle.length - 1];
+    for (const node of nodes.slice(nodes.indexOf(first), nodes.indexOf(last) + 1)) {
+      const range = document.createRange();
+      range.setStart(node, node === first ? start : 0);
+      range.setEnd(node, node === last ? end + 1 : node.data.length);
+      if (!range.collapsed) range.surroundContents(document.createElement("mark"));
+    }
+  }
+}
+
+function render() {
+  const open = new Set([...document.querySelectorAll("details.call[open]")].map(d => d.closest(".msg").dataset.id));
+  const list = $("#list");
+  list.innerHTML = SESSION.items.map(item => {
+    const mine = comments.filter(c => c.msg === item.id);
+    const editingNew = draft && !draft.key && draft.msg === item.id;
+    const classes = ["msg", item.role, ASKS.includes(item.tool) ? "asks" : "", mine.length || editingNew ? "has-note" : ""].join(" ");
+    return `<section class="${classes}" id="m${item.n}" data-id="${esc(item.id)}">
+      <div class="who"><span>${ROLE[item.role]}</span><span>#${item.n}</span><time>${when(item.at)}</time></div>
+      ${content(item)}
+      ${mine.map(noteHtml).join("")}${editingNew ? editorHtml() : ""}
+    </section>`;
+  }).join("");
+  for (const id of open) list.querySelector(`[data-id="${CSS.escape(id)}"] details.call`)?.setAttribute("open", "");
+  for (const section of list.children) {
+    const quotes = comments.filter(c => c.msg === section.dataset.id).map(c => c.quote);
+    if (draft && draft.msg === section.dataset.id) quotes.push(draft.quote);
+    if (quotes.length) highlight(section, quotes);
+  }
+  if (db) $("#status").textContent = comments.length ? `${comments.length} comment${comments.length === 1 ? "" : "s"} saved` : "Select text in a message to comment on it";
+  const typing = focusedReply && list.querySelector(`textarea[data-reply="${CSS.escape(focusedReply)}"]`);
+  if (typing) { typing.focus(); typing.setSelectionRange(typing.value.length, typing.value.length); }
+  else $("#draft")?.focus();
+}
+let focusedReply = null;   // the comment whose reply box has focus, refocused after a snapshot redraws the list
+
+// Selecting text inside a message shows the Comment button next to the selection.
+const pop = $("#pop");
+function selectionTarget() {
+  const sel = getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  const start = range.startContainer.parentElement?.closest("[data-text]");
+  const end = range.endContainer.parentElement?.closest("[data-text]");
+  const quote = sel.toString().trim();
+  if (!start || start !== end || !quote) return null;
+  return { msg: start.closest(".msg").dataset.id, quote, rect: range.getBoundingClientRect() };
+}
+function placePop() {
+  const target = db && !draft && selectionTarget();
+  if (!target) { pop.hidden = true; return; }
+  pop.hidden = false;
+  const top = target.rect.top - pop.offsetHeight - 8;
+  pop.style.top = `${top < 8 ? target.rect.bottom + 8 : top}px`;
+  pop.style.left = `${Math.min(Math.max(8, target.rect.left + target.rect.width / 2 - pop.offsetWidth / 2), innerWidth - pop.offsetWidth - 8)}px`;
+}
+document.addEventListener("mouseup", () => setTimeout(placePop));
+document.addEventListener("keyup", e => { if (e.shiftKey || e.key.startsWith("Arrow")) placePop(); });
+document.addEventListener("selectionchange", () => { if (getSelection().isCollapsed) pop.hidden = true; });
+addEventListener("scroll", () => { if (!pop.hidden) placePop(); }, { passive: true });
+pop.addEventListener("mousedown", e => e.preventDefault());
+pop.addEventListener("click", () => {
+  const target = selectionTarget();
+  if (!target) return;
+  draft = { msg: target.msg, quote: target.quote, text: "" };
+  getSelection().removeAllRanges();
+  pop.hidden = true;
+  render();
+});
+
+$("#list").addEventListener("click", async event => {
+  const button = event.target.closest("button[data-act]");
+  if (!button) return;
+  const act = button.dataset.act;
+  const key = button.closest(".note")?.dataset.key;
+  if (act === "edit") { const c = comments.find(c => c.key === key); draft = { ...c }; render(); return; }
+  if (act === "cancel") { draft = null; render(); return; }
+  try {
+    if (act === "save") {
+      const text = $("#draft").value.trim();
+      if (!text) { draft = null; render(); return; }
+      button.disabled = true;
+      const item = byId[draft.msg];
+      if (draft.key) await db.collection("comments").doc(draft.key).update({ text });
+      else await db.collection("comments").add({ msg: item.id, n: item.n, role: item.role, excerpt: excerpt(item), quote: draft.quote, text, at: new Date().toISOString() });
+      draft = null;
+    } else if (act === "reply") {
+      const text = (replyDrafts[key] || "").trim();
+      if (!text) return;
+      button.disabled = true;
+      await db.collection("replies").add({ comment: key, role: "user", text, at: new Date().toISOString() });
+      delete replyDrafts[key];
+    } else if (act === "delete") {
+      for (const r of replies.filter(r => r.comment === key)) await db.collection("replies").doc(r.key).delete();
+      await db.collection("comments").doc(key).delete();
+    }
+  } catch (e) {
+    $("#status").innerHTML = `<span class="offline">Not saved: ${esc(e.message || e.code)}. Try again.</span>`;
+    button.disabled = false;
+    return;
+  }
+  render();
+});
+
+// Reply boxes: the text survives re-renders; Enter sends, Shift+Enter adds a line break.
+$("#list").addEventListener("input", e => { if (e.target.dataset.reply) replyDrafts[e.target.dataset.reply] = e.target.value; });
+$("#list").addEventListener("focusin", e => { focusedReply = e.target.dataset?.reply || null; });
+$("#list").addEventListener("focusout", e => { if (e.target.dataset?.reply) setTimeout(() => { if (!document.activeElement?.dataset?.reply) focusedReply = null; }); });
+$("#list").addEventListener("keydown", e => {
+  if (e.target.dataset?.reply && e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    e.target.closest(".note").querySelector('[data-act="reply"]').click();
+  }
+});
+
+$("#show-tools").addEventListener("change", e => $("#list").classList.toggle("tool-hidden", !e.target.checked));
+
+$("#next").addEventListener("click", () => {
+  const marks = [...document.querySelectorAll(".msg.has-note")];
+  if (!marks.length) return;
+  const target = marks.find(m => m.getBoundingClientRect().top > 90) || marks[0];
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+$("#title").textContent = SESSION.title || "Session";
+$("#sid").textContent = `${SESSION.project} · ${SESSION.id}`;
+const users = SESSION.items.filter(i => i.role === "user").length;
+$("#counts").textContent = `${SESSION.items.length} messages, ${users} yours`;
+render();
+
+(async () => {
+  db = await window.claude?.use?.("db");
+  if (!db) { $("#status").innerHTML = `<span class="offline">The comment store is unavailable: open the page on claude.ai while signed in.</span>`; return; }
+  db.collection("comments").orderBy("at").onSnapshot(snap => {
+    comments = snap.docs.map(doc => ({ key: doc.id, ...doc.data() }));
+    render();
+  }, e => { $("#status").innerHTML = `<span class="offline">Comments stopped syncing (${esc(e.code)}). Reload the page.</span>`; });
+  db.collection("replies").onSnapshot(snap => {
+    replies = snap.docs.map(doc => ({ key: doc.id, ...doc.data() }));
+    render();
+  }, e => { $("#status").innerHTML = `<span class="offline">Replies stopped syncing (${esc(e.code)}). Reload the page.</span>`; });
+  render();
+})();
+</script>

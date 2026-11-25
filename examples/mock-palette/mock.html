@@ -303,7 +303,7 @@ function renderStrategies() {
     <button type="button" class="item" data-strategy="${s.name}" data-ui="strategy-row">
       <span class="ticker">${s.name}</span><span class="badge">py</span><span class="store">${s.path}</span>
       <span class="mono timeframes">${s.params.length} param${s.params.length === 1 ? "" : "s"}</span><span class="mono coverage">${s.runs.length} run${s.runs.length === 1 ? "" : "s"}</span>
-    </button>`).join("") : `<div class="message">No strategies found in ~/.komplex/strategies.</div>`;
+    </button>`).join("") : `<div class="message">No strategies found in ~/strategies.</div>`;
 }
 
 function parameterError(field, value) {

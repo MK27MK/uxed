@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""kulmine's terminal commands, to run in any project that uses kulmine.
+
+  kulmine glossary [open] [--no-open]   starts the glossary page of the git repository you are in, as a background
+                                        server that stops after 30 minutes idle; prints its address and, if output
+                                        is a terminal, opens it in the browser (--no-open: only print the address).
+                                        The page writes your edits straight into GLOSSARY.md.
+  kulmine glossary comments             prints the comments you left on the page that are still open, one JSON line
+                                        each, with the id that reply accepts
+  kulmine glossary reply ID TEXT        replies to comment ID under it, as the agent, and resolves it
+
+Every glossary command accepts --root DIR for another repository. `kulmine glossary --help` gives the details.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+PLUGIN = Path(__file__).resolve().parents[1]
+COMMANDS = {"glossary": PLUGIN / "skills" / "domain-modeling" / "scripts" / "glossary.py"}
+
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        print(__doc__.strip() if __doc__ else "")
+        return 0
+    script = COMMANDS.get(argv[0])
+    if script is None:
+        print(f"kulmine: unknown command {argv[0]!r}; commands: {', '.join(COMMANDS)}", file=sys.stderr)
+        return 2
+    os.execv(sys.executable, [sys.executable, str(script), *argv[1:]])
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
