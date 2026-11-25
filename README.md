@@ -32,7 +32,7 @@ The agent's questions arrive as a page from `interview-me`, and your answers bec
 
 While it builds, the chat stays quiet: one sentence with the result and a link to a page with the rest, filed in its Linear issue by `tracking` (or in `.kulmine/pages/` if you don't use a tracker). Hooks hold it to that. A reply longer than one sentence goes back to be rewritten, and the session can't edit the Claude Code configuration before reading the docs or start work that has no issue.
 
-For the rest of the climb there's `researching` (primary sources), `domain-modeling` (a `GLOSSARY.md` with its own interactive page), `wait-what` (for a reply that didn't land), `orchestrate` (jobs too big for one agent) and `analyzing-sessions` (the places where you had to correct the agent). The first three are adapted from Matt Pocock's [skills](https://github.com/mattpocock/skills).
+For the rest of the climb there's `researching` (primary sources), `domain-modeling` (a `GLOSSARY.md` with its own interactive page), `wait-what` (for a reply that didn't land) and `orchestrate` (jobs too big for one agent). The first three are adapted from Matt Pocock's [skills](https://github.com/mattpocock/skills).
 
 ## Installation
 
