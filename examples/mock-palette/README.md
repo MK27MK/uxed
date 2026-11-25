@@ -1,6 +1,6 @@
 # Strategy search
 
-A real task from Komplex, a trading app: give the symbol search dialog a Strategies tab where you open a strategy, change its parameters, run a backtest and see its past runs.
+A real task from a trading app: give the symbol search dialog a Strategies tab where you open a strategy, change its parameters, run a backtest and see its past runs.
 
 ## Input
 

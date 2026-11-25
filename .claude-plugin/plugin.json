@@ -1,9 +1,19 @@
 {
-  "name": "uxed",
-  "version": "0.1.0",
-  "author": { "name": "Mattia Carella" },
-  "description": "Design and change UI through an interactive shell, over a mock or the running app, then implement it test-first",
-  "homepage": "https://github.com/MK27MK/uxed",
-  "repository": "https://github.com/MK27MK/uxed",
-  "keywords": ["ui", "mock", "design", "components", "tdd", "inspector"]
+  "name": "kulmine",
+  "description": "Wakes the agent up: the kulmine style, repeated on every message, replaces its learned defaults (agreeing with you, adding things nobody asked for, obeying the last message, deciding for the user, grading its own work) and makes it answer with HTML pages instead of walls of text. Adds skills for interviews that become specs, lessons on unknown unknowns, prototypes, designing UI over a mock or the running app, research, orchestration, and turning the user's corrections into harness changes.",
+  "author": {
+    "name": "kulmine contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "output-style",
+    "html",
+    "artifacts",
+    "skills",
+    "hooks",
+    "ui",
+    "mock",
+    "design"
+  ],
+  "types": "./types/index.d.ts"
 }

@@ -1,35 +1,49 @@
-# uxed
+# kulmine
 
-Skills and other agentic tools that get you into flow state while working with your agent.
-Chatting back and forth is a slow, lossy way to tell an agent what you want.
-Each skill replaces it with an interaction built for high human-agent alignment.
+A Claude Code plugin that corrects the agent's habits (agreeing with you, adding things nobody asked for, declaring its own work good) and makes it answer with HTML pages instead of walls of text.
 
-## Install
+It follows the method of Thariq ([@trq212](https://x.com/trq212)), from the Claude Code team: *thin prompts, thick artifacts + context, thin skills*.
 
-With [skills](https://github.com/vercel-labs/skills), for any agent:
+- [Using Claude Code: the unreasonable effectiveness of HTML](https://claude.dev/blog/using-claude-code-the-unreasonable-effectiveness-of-html/)
+- [The examples](https://thariqs.github.io/html-effectiveness/)
+- [Know your unknowns](https://thariqs.github.io/html-effectiveness/unknowns/index.html)
 
-```
-npx skills add MK27MK/uxed
-```
+## What it does
 
-### Claude Code
+- **Style**: one sentence in chat. Everything else is a page published as an Artifact, which lives in its issue tracker issue or, without a tracker, in `.kulmine/pages/`: you choose on it with cards and chips, and your choices go back to the agent.
+- **Hooks**: send back a chat message longer than one sentence, block edits to Claude Code configuration until the session has read the docs, and, in a project with a tracker, make every piece of work start from its issue.
+- **Skills**: `interview-me` (questions that become a spec), `teaching` (what you don't know you don't know), `prototyping` (options to see and pick), `researching`, `tracking` (Linear issues with imperative titles), `domain-modeling` (the `GLOSSARY.md`), `orchestrate`, `analyzing-sessions`, and [`building-ui`](skills/building-ui/README.md) (design and change UI through an interactive shell, over a mock or the running app, then implement it test-first).
 
-```
-/plugin marketplace add MK27MK/uxed
-/plugin install uxed@uxed
-```
+## Installation
 
-### Codex
+You need Claude Code, `git` and `python3` ≥ 3.9 (and Node ≥ 20 for `building-ui`).
 
-```
-codex plugin marketplace add MK27MK/uxed
-codex plugin add uxed@uxed
+```bash
+claude plugin marketplace add MK27MK/kulmine
 ```
 
-## Skills
+```bash
+claude plugin install kulmine@kulmine
+```
 
-- [building-ui](skills/building-ui/README.md)
+For a single project add `--scope local` to both. It activates at the next session or after `/reload-plugins`; update it with `claude plugin update kulmine@kulmine`.
+
+The skills alone, for any agent, with [skills](https://github.com/vercel-labs/skills): `npx skills add MK27MK/kulmine`. The style and the hooks need Claude Code.
+
+To work on it: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Configuration
+
+`.kulmine/config.json` in the project, all optional:
+
+```json
+{"language": "en", "tracker": {"kind": "linear", "team": "ENG"}}
+```
+
+`language` is the language of issues and pages (default English). With `tracker`, work pages live in the issues; without it, they stay in `.kulmine/pages/`.
+
+Set `KULMINE_STYLE=off` in the environment to silence the style hooks.
 
 ## Examples
 
-- [Strategy search](examples/mock-palette/README.md): a component mocked from three sketches and a spec with building-ui's mock mode.
+- [Strategy search](examples/mock-palette/README.md): a component mocked from three sketches and a spec with `building-ui`'s mock mode.

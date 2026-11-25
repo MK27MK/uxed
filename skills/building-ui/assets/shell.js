@@ -1,6 +1,6 @@
 (async () => {
-  if (window.__uxedShell) return;
-  window.__uxedShell = true;
+  if (window.__kulmineShell) return;
+  window.__kulmineShell = true;
   // The running app loads this script from serve.mjs --app with data-mode="app".
   const { src, dataset } = document.currentScript;
   const isApp = dataset.mode === "app";
@@ -182,7 +182,7 @@
   }
   const ROOT_SELECTOR = isApp ? "body" : "[data-mock-root]";
   // The shell's chrome lives in a shadow root, so the app's styles and handlers never reach it.
-  const host = document.createElement("uxed-shell");
+  const host = document.createElement("kulmine-shell");
   const shadow = host.attachShadow({ mode: "open" });
   const isChrome = (node) => node === host;
 
@@ -271,9 +271,9 @@
       `html.mk-inspect ${ROOT_SELECTOR}, html.mk-inspect ${ROOT_SELECTOR} * { cursor: default !important; }`,
       `html.mk-has-panel body { margin-right: ${PANEL_WIDTH_PX}px !important; }`,
       "html.mk-focus, html.mk-focus body { overflow: hidden !important; }",
-      "html.mk-focus body, html.mk-focus body :not(uxed-shell, [data-mk-focus], [data-mk-focus] *) { visibility: hidden !important; }",
+      "html.mk-focus body, html.mk-focus body :not(kulmine-shell, [data-mk-focus], [data-mk-focus] *) { visibility: hidden !important; }",
       "html.mk-focus [data-mk-focus] { visibility: visible !important; }",
-      "html.mk-focus body > :not(uxed-shell) { translate: var(--mk-dx, 0px) var(--mk-dy, 0px) !important; }",
+      "html.mk-focus body > :not(kulmine-shell) { translate: var(--mk-dx, 0px) var(--mk-dy, 0px) !important; }",
     ];
     const open = Object.entries(notes.elements)
       .filter(([id, note]) => registry.has(id) && note.comments?.some((c) => !c.resolved))

@@ -1,6 +1,11 @@
+__pycache__/
 .DS_Store
+.obsidian/
+CLAUDE.local.md
+*-workspace/
+**/evals/results/
 .claude/worktrees/
-video/
-.agents/
 .claude/skills/
+.agents/
+video/
 skills-lock.json

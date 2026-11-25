@@ -1,0 +1,4 @@
+#!/bin/sh
+# Updates vendor/kulmine in the projects registered with `git config --add kulmine.consumer <path>`.
+# Active only with core.hooksPath=githooks (see CONTRIBUTING.md).
+exec python3 -I "$(git rev-parse --show-toplevel)/hooks/vendor/vendor.py" --source-side

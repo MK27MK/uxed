@@ -1,6 +1,14 @@
 {
-  "name": "uxed",
-  "description": "Design and change UI through an interactive shell, over a mock or the running app, then implement it test-first",
-  "owner": { "name": "Mattia Carella" },
-  "plugins": [{ "name": "uxed", "source": "./" }]
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "kulmine",
+  "owner": {
+    "name": "kulmine contributors"
+  },
+  "description": "kulmine: wake the agent up, and run ambitious work with agents.",
+  "plugins": [
+    {
+      "name": "kulmine",
+      "source": "./"
+    }
+  ]
 }
