@@ -67,10 +67,10 @@ test("clear resets all entries or only the given ids", () => {
 test("the CLI prints pending work with each element's files, and bakes style edits", async () => {
   const root = await mkdtemp(join(tmpdir(), "notes-"));
   await mkdir(join(root, "src"));
-  await mkdir(join(root, ".uxed"));
+  await mkdir(join(root, ".kulmine", "ui"), { recursive: true });
   await writeFile(join(root, "src/bar.module.css"), ".root {\n  gap: 2px;\n}\n");
   await writeFile(join(root, "src/bar.tsx"), 'import s from "./bar.module.css";\n<div className={s.root} />');
-  const notesPath = join(root, ".uxed/notes.json");
+  const notesPath = join(root, ".kulmine/ui/notes.json");
   await writeFile(notesPath, JSON.stringify({
     elements: { "bar.root": { behaviour: [], comments: [user("Tighter, please.")] } },
     edits: { "bar.root": { style: { gap: "4px" }, text: { 0: "Hi" } } },

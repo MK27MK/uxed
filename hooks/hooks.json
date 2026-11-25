@@ -1,0 +1,97 @@
+{
+  "description": "kulmine: forces the kulmine output style, puts it in every subagent and repeats its thesis on every user message; sends back for rewriting a final chat message longer than one sentence; blocks edits to Claude Code configuration until the session has read Claude Code's documentation; in a project with an issue tracker makes the agent open the issue at the start of each piece of work and blocks edits until the session has one; in chat hides the text written between tool calls and the replies sent back by the Stop hook, leaving only the final reply visible.",
+  "modules": [
+    "./chat/hide.tsx"
+  ],
+  "hooks": {
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/kulmine/kulmine.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/kulmine/kulmine.py\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/issue/issue.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/chat/chat.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/docs/docs.py\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/issue/issue.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^mcp__.*__(get_issue|save_issue)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/issue/issue_seen.py\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch|Bash|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/docs/docs_seen.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "claude-code-guide",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/docs/docs_seen.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary</title>
+<style>
+/* A dictionary page: letters in order, each term a card; terms to review carry a bar on their left. Neutral greys, plus red/green for the since-approved diff. */
+:root {
+  --bg: #f7f7f7; --surface: #ffffff; --fg: #141414; --muted: #6b6b6b; --faint: #a6a6a6; --line: #e2e2e2; --soft: #efefef;
+  --del-fg: #b42318; --del-bg: #fde8e7; --ins-fg: #067647; --ins-bg: #e3f6ea;
+  --serif: "Times New Roman", Times, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0b0b; --surface: #141414; --fg: #ebebeb; --muted: #8f8f8f; --faint: #575757; --line: #262626; --soft: #1d1d1d;
+  --del-fg: #ff8a80; --del-bg: #3a1614; --ins-fg: #6fdc9a; --ins-bg: #0f2e1c;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b0b0b; --surface: #141414; --fg: #ebebeb; --muted: #8f8f8f; --faint: #575757; --line: #262626; --soft: #1d1d1d;
+  --del-fg: #ff8a80; --del-bg: #3a1614; --ins-fg: #6fdc9a; --ins-bg: #0f2e1c;
+  color-scheme: dark }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); }
+main { max-width: 840px; margin: 0 auto; padding: 28px 16px 120px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 14px; }
+header.top .where { flex-basis: 100%; order: 3; }
+header.top h1 { margin-right: auto; }
+h1 { font: 400 40px/1.1 var(--serif); margin: 0; letter-spacing: -.01em; }
+.where { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.where code { font: 12px ui-monospace, Menlo, monospace; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { flex: 1 1 200px; min-width: 0; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 10px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.seg .n { font-variant-numeric: tabular-nums; opacity: .75; margin-left: 4px; }
+.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  height: 34px; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.primary:hover { opacity: .88; }
+.btn.danger { background: #c62828; border-color: #c62828; color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+/* An icon-only button: its name is its aria-label, shown as a tooltip on hover and keyboard focus. */
+.ibtn { position: relative; display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid transparent;
+  border-radius: 8px; background: transparent; color: var(--muted); }
+.ibtn:hover { color: var(--fg); background: var(--soft); }
+.ibtn.boxed { border-color: var(--line); background: var(--surface); }
+.ibtn.boxed:hover { border-color: var(--faint); }
+.ibtn.small { width: 26px; height: 26px; border-radius: 6px; }
+.ibtn.small .icon { width: 14px; height: 14px; }
+.ibtn .badge { position: absolute; top: 2px; right: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: var(--fg);
+  color: var(--bg); font-size: 10px; line-height: 15px; font-variant-numeric: tabular-nums; text-align: center; }
+.ibtn .badge.quiet { background: var(--soft); color: var(--muted); }
+kbd { font: 11px/1 ui-monospace, Menlo, monospace; border: 1px solid currentColor; border-radius: 4px; padding: 1px 4px; opacity: .7; }
+.tip { position: fixed; z-index: 20; max-width: 280px; padding: 5px 9px; border-radius: 6px; background: var(--fg); color: var(--bg);
+  font-size: 12.5px; line-height: 1.4; pointer-events: none; opacity: 0; transition: opacity .12s; }
+.tip.on { opacity: 1; }
+.tip kbd { margin-left: 4px; }
+
+.searchbox { position: relative; flex: 1 1 200px; min-width: 0; }
+.searchbox > .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.searchbox > kbd { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.searchbox input:focus ~ kbd, .searchbox input:not(:placeholder-shown) ~ kbd { display: none; }
+.search { width: 100%; height: 34px; padding: 0 30px 0 32px; }
+.bar .tools { display: flex; gap: 4px; }
+
+.index { display: flex; flex-wrap: wrap; gap: 2px; margin: 12px 0 4px; }
+.index a, .index span { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; font: 17px/1 var(--serif);
+  padding: 5px 7px; border-radius: 6px; }
+.index a { color: var(--fg); text-decoration: none; }
+.index a:hover { background: var(--soft); }
+.index span { color: var(--faint); }
+.index a::after, .index span::after { content: ""; width: 4px; height: 4px; border-radius: 50%; }
+.index a.pending::after { background: var(--fg); }
+
+.notice { margin: 12px 0 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13.5px; }
+.notice:empty { display: none; }
+.empty { color: var(--muted); padding: 32px 0; text-align: center; }
+
+section.letter { margin-top: 18px; scroll-margin-top: 64px; }
+.letter > button.head { all: unset; cursor: pointer; display: flex; align-items: baseline; gap: 12px; width: 100%;
+  padding: 6px 0; border-bottom: 1px solid var(--line); }
+.letter > button.head:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.letter .glyph { font: 400 30px/1 var(--serif); min-width: 26px; }
+.index a.topic, .index span.topic { font-size: 15px; padding-inline: 8px; }
+.letter .count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.letter .chev { margin-left: auto; color: var(--muted); transition: transform .15s; font-size: 12px; }
+.letter.closed .chev { transform: rotate(-90deg); }
+.letter.closed .terms { display: none; }
+.terms { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
+
+article.term { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 12px 18px; scroll-margin-top: 64px; }
+article.term.review::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; background: var(--fg); border-radius: 10px 0 0 10px; }
+.term .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.term h3 { font: 400 25px/1.2 var(--serif); margin: 0; overflow-wrap: anywhere; }
+.term h3 code { font-family: var(--serif); }
+.chip { font-size: 11.5px; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.review .chip { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip.ok { display: inline-grid; place-items: center; padding: 0; width: 20px; height: 20px; align-self: center; }
+.chip.ok .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+.section-tag { font-size: 12px; color: var(--muted); }
+.term .actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+.term .def { cursor: text; }
+.def { margin: 6px 0 0; overflow-wrap: anywhere; }
+/* Aliases and Avoid sit under the name, the words around it, before what it means. */
+.words { margin: 2px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.words + .def { margin-top: 8px; }
+.words b, .diff b { font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
+code { font: .9em ui-monospace, Menlo, monospace; background: var(--soft); padding: 1px 4px; border-radius: 4px; }
+a { color: inherit; }
+
+.diff { margin-top: 10px; padding: 9px 12px; border: 1px dashed var(--faint); border-radius: 8px; font-size: 14px; }
+.diff .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.diff del { color: var(--del-fg); background: var(--del-bg); text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 3px; }
+.diff ins { color: var(--ins-fg); background: var(--ins-bg); text-decoration: none; border-radius: 3px; }
+.diff p { margin: 2px 0; overflow-wrap: anywhere; }
+
+form.edit { display: grid; gap: 8px; }
+form.edit label { display: grid; gap: 3px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+form.edit input, form.edit textarea { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+  font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--fg); }
+form.edit input.name { font: 23px/1.2 var(--serif); }
+form.edit textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+form.edit .buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+form.edit .buttons .hint { color: var(--muted); font-size: 12px; margin-right: auto; }
+form.edit .buttons .hint kbd { margin: 0 2px; }
+form.edit .error { font-size: 13.5px; font-weight: 600; }
+form.edit .error:empty { display: none; }
+.newform { margin-top: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+
+.thread { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 8px; }
+.comment { font-size: 14px; display: grid; gap: 2px; }
+.comment .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; min-height: 26px; }
+.comment .meta b { color: var(--fg); font-weight: 600; }
+.comment .meta .acts { margin-left: auto; display: flex; gap: 2px; }
+.comment .text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment.agent { padding-left: 12px; border-left: 2px solid var(--line); }
+.comment.resolved { opacity: .55; }
+.thread form { display: flex; gap: 6px; align-items: flex-end; }
+.thread textarea { flex: 1; min-width: 0; min-height: 34px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); resize: vertical; font-size: 14px; }
+.toggle-resolved { all: unset; cursor: pointer; font-size: 12.5px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px;
+  border-radius: 8px; font-size: 13.5px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.on { opacity: 1; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 32px; }
+  .term .actions { margin-left: 0; width: 100%; }
+  .bar { position: static; }
+  .bar .seg { order: 3; width: 100%; } .seg button { flex: 1; padding-inline: 4px; }
+  .bar #approveall { order: 4; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>Glossary</h1>
+    <button class="ibtn" id="theme" type="button"></button>
+    <button class="btn primary" id="add" type="button" data-tip="Add a term to GLOSSARY.md" data-keys="N"></button>
+    <span class="where" id="where"></span>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="Glossary controls">
+    <div class="searchbox"><input class="search" id="search" type="search" placeholder="Search"
+      aria-label="Search terms and definitions" aria-keyshortcuts="/"><kbd>/</kbd></div>
+    <div class="seg" id="filter" role="group" aria-label="Show">
+      <button type="button" data-filter="all" aria-pressed="true" data-tip="Every term">All<span class="n"></span></button>
+      <button type="button" data-filter="review" aria-pressed="false" data-tip="Terms the agent added or changed, not yet approved as they read now">To review<span class="n"></span></button>
+      <button type="button" data-filter="approved" aria-pressed="false" data-tip="Terms you approved, unchanged since">Approved<span class="n"></span></button>
+      <button type="button" data-filter="comments" aria-pressed="false" data-tip="Terms with a comment or an answer still open">Open comments<span class="n"></span></button>
+    </div>
+    <div class="seg" id="view" role="group" aria-label="Group by" hidden>
+      <button type="button" data-view="letter" aria-pressed="true" data-tip="Terms in alphabetical order">A–Z</button>
+      <button type="button" data-view="topic" aria-pressed="false" data-tip="Terms by the section of GLOSSARY.md they sit in">Topic</button>
+    </div>
+    <div class="tools">
+      <button class="ibtn boxed" id="expand" type="button" data-icon="expand" data-tip="Expand every group"></button>
+      <button class="ibtn boxed" id="collapse" type="button" data-icon="collapse" data-tip="Collapse every group"></button>
+    </div>
+    <button class="btn" id="approveall" type="button" hidden></button>
+  </div>
+
+  <nav class="index" id="index" aria-label="Groups"></nav>
+  <div class="notice" id="notice" role="status"></div>
+  <div id="newslot"></div>
+  <div id="list"></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+let data = null;            // the server's snapshot
+let filter = "all";
+let view = "letter";        // "letter" groups terms A–Z, "topic" by their GLOSSARY.md section
+let query = "";
+const editing = new Map();  // term name -> {base, values}; "" is the new-term form
+const openThreads = new Set();
+const showResolved = new Set();
+let staleWhileEditing = false;
+let closed = new Set();
+
+/* ---------- icons and tooltips ---------- */
+const ICONS = {
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  checks: '<path d="M2.5 12.5l4 4L15 8"/><path d="M11.5 16.5l1 1L21.5 8"/>',
+  back: '<path d="M9 5L4 10l5 5"/><path d="M4 10h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13 7l4 4"/>',
+  comment: '<path d="M4 5h16v11H10l-6 4V5z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  trash: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
+  send: '<path d="M20.5 3.5L3.5 10l7 3 3 7 7-16.5z"/><path d="M10.5 13l4-4"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  expand: '<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>',
+  collapse: '<path d="M7 4l5 5 5-5M7 20l5-5 5 5"/>',
+  chevron: '<path d="M6 9l6 6 6-6"/>',
+  auto: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
+  light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  dark: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+};
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl";
+const icon = name => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+// An icon-only button: the tooltip text is also its accessible name.
+const ibtn = (name, tip, attrs = "", cls = "", keys = "") =>
+  `<button class="ibtn ${cls}" type="button" aria-label="${esc(tip)}" data-tip="${esc(tip)}"${keys ? ` data-keys="${esc(keys)}"` : ""} ${attrs}>${icon(name)}</button>`;
+for (const b of document.querySelectorAll("button[data-icon]")) {
+  b.innerHTML = icon(b.dataset.icon) + b.innerHTML;
+  if (!b.textContent.trim()) b.setAttribute("aria-label", b.dataset.tip);
+}
+$("#add").innerHTML = icon("plus") + "New term";
+$("#search").insertAdjacentHTML("beforebegin", icon("search"));
+
+const tip = document.createElement("div");
+tip.className = "tip"; tip.setAttribute("role", "tooltip"); tip.id = "tip";
+document.body.appendChild(tip);
+let tipFor = null, tipTimer = 0;
+function showTip(el) {
+  if (!el.isConnected || !el.dataset.tip) return;
+  tipFor = el;
+  tip.innerHTML = esc(el.dataset.tip) + (el.dataset.keys ? el.dataset.keys.split(" ").map(k => `<kbd>${esc(k)}</kbd>`).join("") : "");
+  tip.classList.add("on");
+  const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  const top = r.top - h - 8 < 4 ? r.bottom + 8 : r.top - h - 8;
+  tip.style.top = top + "px";
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+  el.setAttribute("aria-describedby", "tip");
+}
+function hideTip() {
+  clearTimeout(tipTimer);
+  if (tipFor) tipFor.removeAttribute("aria-describedby");
+  tipFor = null; tip.classList.remove("on");
+}
+document.addEventListener("pointerover", e => {
+  if (e.pointerType === "touch") return;
+  const el = e.target.closest("[data-tip]");
+  if (el === tipFor) return;
+  hideTip();
+  if (el) tipTimer = setTimeout(() => showTip(el), 400);
+});
+document.addEventListener("pointerout", e => {
+  const el = e.target.closest("[data-tip]");
+  if (el && !el.contains(e.relatedTarget)) hideTip();
+});
+document.addEventListener("focusin", e => { hideTip(); const el = e.target.closest("[data-tip]"); if (el && el.matches(":focus-visible")) showTip(el); });
+document.addEventListener("focusout", hideTip);
+document.addEventListener("pointerdown", hideTip);
+addEventListener("scroll", hideTip, { passive: true });
+
+/* ---------- theme ---------- */
+const THEMES = ["auto", "light", "dark"];
+const THEME_TIP = { auto: "Theme follows the system. Click for light", light: "Light theme. Click for dark",
+  dark: "Dark theme. Click to follow the system" };
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  const b = $("#theme");
+  b.innerHTML = icon(t);
+  b.dataset.tip = THEME_TIP[t];
+  b.setAttribute("aria-label", THEME_TIP[t]);
+  if (tipFor === b) showTip(b);
+}
+let theme = store.get("glossary.theme", "auto");
+applyTheme(theme);
+$("#theme").onclick = () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; store.set("glossary.theme", theme); applyTheme(theme); };
+
+/* ---------- text ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function inline(s) {
+  // The Markdown a definition uses: `code`, **bold**, _italic_ or *italic*, [text](url).
+  const parts = String(s).split(/(`[^`]*`)/);
+  return parts.map(p => {
+    if (/^`[^`]*`$/.test(p)) return "<code>" + esc(p.slice(1, -1)) + "</code>";
+    let h = esc(p);
+    h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    h = h.replace(/(^|[^\w*])\*([^*\s][^*]*)\*(?!\w)/g, "$1<em>$2</em>");
+    h = h.replace(/(^|[^\w])_([^_\s][^_]*)_(?!\w)/g, "$1<em>$2</em>");
+    h = h.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return h;
+  }).join("");
+}
+const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+const sortKey = name => name.replace(/[`*_"'“”‘’(\[]/g, "").trim();
+function letterOf(name) {
+  const c = sortKey(name).normalize("NFD").replace(/[̀-ͯ]/g, "").charAt(0).toUpperCase();
+  return /[A-Z]/.test(c) ? c : "#";
+}
+const toReview = t => t.status !== "approved";
+// A comment is open until the user resolves it; the agent's answer stays open until the user has read it.
+const openComments = t => t.comments.filter(c => !c.resolved).length;
+function matches(t) {
+  if (filter === "review" && !toReview(t)) return false;
+  if (filter === "approved" && toReview(t)) return false;
+  if (filter === "comments" && !openComments(t)) return false;
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return [t.name, t.aliases, t.definition, t.avoid].some(s => (s || "").toLowerCase().includes(q));
+}
+function when(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+/* A word diff of the approved text against the current one. */
+function diff(a, b) {
+  const x = a.split(/(\s+)/), y = b.split(/(\s+)/);
+  const n = x.length, m = y.length;
+  if (n * m > 400000) return "<del>" + esc(a) + "</del> <ins>" + esc(b) + "</ins>";
+  const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = x[i] === y[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, out = "";
+  while (i < n && j < m) {
+    if (x[i] === y[j]) { out += esc(x[i]); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) { out += "<del>" + esc(x[i++]) + "</del>"; }
+    else { out += "<ins>" + esc(y[j++]) + "</ins>"; }
+  }
+  while (i < n) out += "<del>" + esc(x[i++]) + "</del>";
+  while (j < m) out += "<ins>" + esc(y[j++]) + "</ins>";
+  return out;
+}
+
+/* ---------- server ---------- */
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? { cache: "no-store" } : {
+    method: "POST", headers: { "Content-Type": "application/json", "X-Glossary": "1" }, body: JSON.stringify(body) });
+  let payload = null;
+  try { payload = await r.json(); } catch {}
+  if (!r.ok) { const e = new Error((payload && payload.error) || ("The server answered " + r.status)); e.status = r.status; throw e; }
+  return payload;
+}
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("on"), 2200);
+}
+function notice(msg) { $("#notice").textContent = msg || ""; }
+
+async function load() {
+  data = await api("/api/glossary");
+  closed = new Set(store.get("glossary.closed:" + data.path, []));
+  $("#where").innerHTML = esc(data.project) + " · <code>" + esc(data.path) + "</code>";
+  document.title = "Glossary · " + data.project;
+  staleWhileEditing = false;
+  notice("");
+  render();
+}
+function accept(snapshot) { data = snapshot; staleWhileEditing = false; notice(""); render(); }
+
+async function poll() {
+  if (!data || document.hidden) return;
+  try {
+    const { version } = await api("/api/version");
+    if (version === data.version) return;
+    const typing = document.activeElement && document.activeElement.matches("#list textarea") && document.activeElement.value.trim();
+    if (editing.size || typing) {
+      staleWhileEditing = true;
+      notice("GLOSSARY.md changed on disk while you were editing. The page updates when you save or cancel.");
+      return;
+    }
+    const before = new Set(data.terms.map(t => t.name));
+    data = await api("/api/glossary");
+    const added = data.terms.filter(t => !before.has(t.name)).length;
+    render();
+    toast(added ? `GLOSSARY.md changed: ${added} new term${added > 1 ? "s" : ""}` : "GLOSSARY.md changed on disk");
+  } catch { notice("The glossary server is not answering. Ask the agent to open the glossary again, or run glossary.py open in a terminal."); }
+}
+setInterval(poll, 3000);
+document.addEventListener("visibilitychange", poll);
+
+/* ---------- rendering ---------- */
+function render() {
+  const terms = [...data.terms].sort((a, b) => collator.compare(sortKey(a.name), sortKey(b.name)));
+  const counts = { all: terms.length, review: terms.filter(toReview).length,
+    approved: terms.filter(t => !toReview(t)).length, comments: terms.filter(openComments).length };
+  for (const b of $("#filter").children) {
+    b.setAttribute("aria-pressed", String(b.dataset.filter === filter));
+    $(".n", b).textContent = counts[b.dataset.filter];
+  }
+  const shown = terms.filter(matches);
+  const reviewable = shown.filter(toReview);
+  const all = $("#approveall");
+  all.hidden = !reviewable.length || filter !== "review";
+  all.innerHTML = icon("checks") + `Approve ${reviewable.length} shown`;
+  all.dataset.tip = `Approve the ${reviewable.length} term${reviewable.length > 1 ? "s" : ""} shown, as they read now`;
+  all.onclick = () => { if (armed(all, `Approve ${reviewable.length}?`)) approveMany(reviewable); };
+  const many = data.sections.length > 1;
+  $("#view").hidden = !many;
+  const byTopic = many && view === "topic";
+  for (const b of $("#view").children) b.setAttribute("aria-pressed", String(b.dataset.view === (byTopic ? "topic" : "letter")));
+  const keyOf = t => byTopic ? TOPIC + t.section : letterOf(t.name);
+  const groups = new Map();
+  for (const t of shown) { const l = keyOf(t); if (!groups.has(l)) groups.set(l, []); groups.get(l).push(t); }
+
+  const keys = byTopic ? data.sections.map(s => TOPIC + s) : [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ...(groups.has("#") ? ["#"] : [])];
+  $("#index").innerHTML = keys.map(l => {
+    const cls = byTopic ? "topic" : "";
+    if (!groups.has(l)) return `<span class="${cls}" aria-hidden="true">${esc(groupName(l))}</span>`;
+    const n = groups.get(l).length, pending = groups.get(l).filter(toReview).length;
+    const label = `${n} term${n > 1 ? "s" : ""}` + (pending ? `, ${pending} to review` : "");
+    return `<a href="#${groupId(l)}" data-letter="${esc(l)}" class="${cls}${pending ? " pending" : ""}" data-tip="${label}" aria-label="${esc(groupName(l))}: ${label}">${esc(groupName(l))}</a>`;
+  }).join("");
+
+  const list = $("#list");
+  const focusName = document.activeElement && document.activeElement.closest("article")?.dataset.name;
+  list.innerHTML = "";
+  if (!shown.length) {
+    const none = { review: "Nothing to review: you approved every term as it reads now.", approved: "No term is approved yet.",
+      comments: "No comment is open.", all: "" }[filter];
+    const why = !terms.length ? "The glossary has no terms yet." : query ? `No term ${filter === "all" ? "" : "in this filter "}contains “${esc(query)}”.` : none;
+    list.innerHTML = `<p class="empty">${why}${terms.length && (query || filter !== "all")
+      ? ` <button class="btn" type="button" id="showall">Show all terms</button>` : ""}</p>`;
+    const reset = $("#showall");
+    if (reset) reset.onclick = () => { query = ""; $("#search").value = ""; filter = "all"; store.set("glossary.filter", filter); render(); };
+  }
+  const order = byTopic ? keys.filter(k => groups.has(k)) : [...groups.keys()].sort((a, b) => a === "#" ? 1 : b === "#" ? -1 : a.localeCompare(b));
+  for (const l of order) {
+    const sec = document.createElement("section");
+    sec.className = "letter" + (closed.has(l) && !query ? " closed" : "");
+    sec.id = groupId(l);
+    const items = groups.get(l);
+    const pending = items.filter(toReview).length;
+    sec.innerHTML = `<button class="head" type="button" aria-expanded="${!sec.classList.contains("closed")}">
+        <span class="glyph">${esc(groupName(l))}</span><span class="count">${items.length} term${items.length > 1 ? "s" : ""}${pending ? ` · ${pending} to review` : ""}</span>
+        <span class="chev">${icon("chevron")}</span></button><div class="terms"></div>`;
+    $(".head", sec).onclick = () => toggleLetter(l, sec);
+    const box = $(".terms", sec);
+    for (const t of items) box.appendChild(termCard(t, many && !byTopic));
+    list.appendChild(sec);
+  }
+  renderNew();
+  if (focusName) { const el = [...list.querySelectorAll("article")].find(a => a.dataset.name === focusName); if (el) $("textarea, input", el)?.focus(); }
+}
+
+// A topic's key is its section name behind a prefix no letter has, so the two views keep separate collapsed groups.
+const TOPIC = "§";
+const groupName = k => k.startsWith(TOPIC) ? k.slice(1) || "Other" : k;
+const groupId = k => k.startsWith(TOPIC) ? "topic-" + data.sections.indexOf(k.slice(1)) : "letter-" + (k === "#" ? "other" : k);
+function toggleLetter(l, sec) {
+  const isClosed = sec.classList.toggle("closed");
+  $(".head", sec).setAttribute("aria-expanded", String(!isClosed));
+  isClosed ? closed.add(l) : closed.delete(l);
+  store.set("glossary.closed:" + data.path, [...closed]);
+}
+function setAll(open) {
+  closed = open ? new Set() : new Set([..."ABCDEFGHIJKLMNOPQRSTUVWXYZ#", ...data.sections.map(s => TOPIC + s)]);
+  store.set("glossary.closed:" + data.path, [...closed]);
+  render();
+}
+$("#expand").onclick = () => setAll(true);
+$("#collapse").onclick = () => setAll(false);
+$("#index").addEventListener("click", e => {
+  const a = e.target.closest("a[data-letter]"); if (!a) return;
+  const l = a.dataset.letter;
+  if (closed.has(l)) { closed.delete(l); store.set("glossary.closed:" + data.path, [...closed]); render(); }
+});
+
+const CHIP = {
+  new: ["New", "Added by the agent and not approved yet"],
+  changed: ["Changed", "Changed since you approved it; the change is shown below"],
+};
+function termCard(t, many) {
+  const el = document.createElement("article");
+  el.className = "term" + (toReview(t) ? " review" : "");
+  el.dataset.name = t.name;
+  el.id = "term-" + encodeURIComponent(t.name);
+  if (editing.has(t.name)) { el.appendChild(editForm(t)); return el; }
+  const open = openComments(t);
+  const chip = toReview(t)
+    ? `<span class="chip" data-tip="${CHIP[t.status][1]}">${CHIP[t.status][0]}</span>`
+    : `<span class="chip ok" data-tip="Approved as it reads now" aria-label="Approved" role="img">${icon("check")}</span>`;
+  const comments = t.comments.length
+    ? `${open ? "Comments: " + open + " open" : "Comments"}` : "Comment for the agent";
+  el.innerHTML = `<div class="row">
+      <h3>${inline(t.name)}</h3>
+      ${chip}
+      ${many && t.section ? `<span class="section-tag">${esc(t.section)}</span>` : ""}
+      <div class="actions">
+        ${ibtn("edit", "Edit", 'data-act="edit"', "", "E")}
+        ${ibtn("trash", "Delete the term from GLOSSARY.md", 'data-act="delete"')}
+        <button class="ibtn" type="button" data-act="thread" aria-label="${comments}" data-tip="${comments}"
+          aria-expanded="${openThreads.has(t.name) || open > 0}">${icon("comment")}${t.comments.length
+            ? `<span class="badge${open ? "" : " quiet"}">${open || t.comments.length}</span>` : ""}</button>
+        ${toReview(t)
+          ? `<button class="btn primary" type="button" data-act="approve" data-tip="Approve this wording">${icon("check")}Approve</button>`
+          : ibtn("back", "Send back to review", 'data-act="approve"')}
+      </div></div>
+    ${t.aliases ? `<p class="words aliases"><b>Aliases</b>${inline(t.aliases)}</p>` : ""}
+    ${t.avoid ? `<p class="words avoid"><b>Avoid</b>${inline(t.avoid)}</p>` : ""}
+    <p class="def">${inline(t.definition).replace(/\n/g, "<br>")}</p>`;
+  if (t.status === "changed" && t.approved) {
+    const d = document.createElement("div");
+    d.className = "diff";
+    const was = (k, label) => (t.approved[k] || "") !== (t[k] || "")
+      ? `<p><b>${label}</b> ${diff(t.approved[k] || "", t[k] || "")}</p>` : "";
+    d.innerHTML = `<div class="label">Since you approved it</div>
+      ${was("name", "Term")}${was("aliases", "Aliases")}${was("avoid", "Avoid")}
+      <p>${diff(t.approved.definition || "", t.definition)}</p>`;
+    el.appendChild(d);
+  }
+  if (openThreads.has(t.name) || open > 0) el.appendChild(thread(t));
+  const edit = () => { editing.set(t.name, { base: t.hash, values: { name: t.name, aliases: t.aliases, definition: t.definition, avoid: t.avoid } }); render(); focusEditor(t.name); };
+  el.edit = edit;
+  $(".def", el).addEventListener("dblclick", () => { if (!getSelection().toString().trim()) edit(); });
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    if (b.dataset.act === "approve") approve(t, toReview(t));
+    if (b.dataset.act === "edit") edit();
+    if (b.dataset.act === "delete") deleteTerm(t, t.hash, b);
+    if (b.dataset.act === "thread") {
+      if (openThreads.has(t.name) && !open) openThreads.delete(t.name); else openThreads.add(t.name);
+      render();
+      if (openThreads.has(t.name)) document.getElementById("term-" + encodeURIComponent(t.name))?.querySelector(".thread textarea")?.focus();
+    }
+  });
+  return el;
+}
+function focusEditor(name) {
+  const el = name === "" ? $("#newslot") : document.getElementById("term-" + encodeURIComponent(name));
+  const f = el && $("textarea", el); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+}
+
+function editForm(t) {
+  const isNew = !t;
+  const key = isNew ? "" : t.name;
+  const state = editing.get(key);
+  const v = state.values;
+  const f = document.createElement("form");
+  f.className = "edit";
+  f.innerHTML = `<label>Term<input class="name" name="name" required autocomplete="off" spellcheck="false"></label>
+    <label>Aliases<input name="aliases" autocomplete="off" spellcheck="false" placeholder="Other names that mean the same, such as an abbreviation, comma separated"></label>
+    <label>Avoid<input name="avoid" autocomplete="off" placeholder="Words not to use for it, comma separated"></label>
+    <label>Definition<textarea name="definition" required></textarea></label>
+    <div class="error" role="alert">${esc(state.error || "")}</div>
+    <div class="buttons">
+      ${isNew ? "" : ibtn("trash", "Delete the term from GLOSSARY.md", 'data-act="delete"')}
+      <span class="hint">Saving writes GLOSSARY.md and approves the term.</span>
+      <button class="btn" type="button" data-act="cancel" data-tip="Discard your changes" data-keys="Esc">Cancel</button>
+      <button class="btn primary" type="submit" data-tip="Write GLOSSARY.md and approve" data-keys="${MOD} ↵">${icon("check")}${isNew ? "Add" : "Save"}</button></div>`;
+  for (const k of ["name", "aliases", "definition", "avoid"]) {
+    f.elements[k].value = v[k] || "";
+    f.elements[k].addEventListener("input", () => { v[k] = f.elements[k].value; });
+  }
+  const cancel = () => { editing.delete(key); if (staleWhileEditing && !editing.size) load(); else render(); };
+  f.addEventListener("keydown", e => {
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); f.requestSubmit(); }
+  });
+  f.addEventListener("click", async e => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    if (b.dataset.act === "cancel") cancel();
+    if (b.dataset.act === "delete") deleteTerm(t, state.base, b);
+  });
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const body = { name: v.name.trim(), aliases: v.aliases || "", definition: v.definition, avoid: v.avoid, approve: true };
+    if (!isNew) Object.assign(body, { old_name: t.name, base: state.base });
+    $("button[type=submit]", f).disabled = true;
+    try {
+      const snap = await api("/api/save", body);
+      editing.delete(key);
+      accept(snap);
+      toast((isNew ? "Added " : "Saved ") + body.name);
+      const el = document.getElementById("term-" + encodeURIComponent(body.name));
+      if (el) { const l = el.closest("section.letter"); if (l && l.classList.contains("closed")) toggleLetter(letterOf(body.name), l); el.scrollIntoView({ block: "nearest" }); }
+    } catch (err) { conflictOrError(key, err); }
+  });
+  return f;
+}
+/* A destructive button asks on the page: the first click arms it, a second within a few seconds acts. The browser's own
+   confirm() is not used, because embedded browsers such as Claude's answer it with "cancel" without showing it. */
+function armed(b, label) {
+  if (b.dataset.armed) return true;
+  const was = { html: b.innerHTML, cls: b.className, tip: b.dataset.tip };
+  b.dataset.armed = "1";
+  b.className = "btn danger";
+  b.textContent = label;
+  b.dataset.tip = "Click again to confirm";
+  setTimeout(() => { if (!b.isConnected) return; delete b.dataset.armed; b.innerHTML = was.html; b.className = was.cls; b.dataset.tip = was.tip; }, 4000);
+  return false;
+}
+async function deleteTerm(t, base, b) {
+  if (!armed(b, "Delete " + t.name + "?")) return;
+  try { const snap = await api("/api/delete", { name: t.name, base }); editing.delete(t.name); accept(snap); toast("Deleted " + t.name); }
+  catch (err) { if (editing.has(t.name)) conflictOrError(t.name, err); else { await load(); toast(err.status === 409 ? t.name + " changed in GLOSSARY.md; read it again before deleting" : err.message); } }
+}
+async function conflictOrError(key, err) {
+  const state = editing.get(key);
+  if (!state) return;
+  if (err.status === 409) {
+    const fresh = await api("/api/glossary");
+    const now = fresh.terms.find(x => x.name === key);
+    data = fresh;
+    if (now) {
+      state.base = now.hash;
+      state.error = "This term changed in GLOSSARY.md while you edited it. It now reads: “" + now.definition +
+        "”. Save again to replace it with your text, or cancel to keep the file's.";
+    } else {
+      editing.delete(key);
+      if (!editing.has("")) editing.set("", { values: state.values });
+      editing.get("").error = "This term was removed or renamed in GLOSSARY.md while you edited it. Your text is here as a new term.";
+    }
+  } else state.error = err.message;
+  render();
+}
+
+function renderNew() {
+  const slot = $("#newslot");
+  slot.innerHTML = "";
+  if (!editing.has("")) return;
+  const box = document.createElement("div");
+  box.className = "newform";
+  box.appendChild(editForm(null));
+  slot.appendChild(box);
+}
+$("#add").onclick = () => {
+  if (!editing.has("")) editing.set("", { values: { name: query, aliases: "", definition: "", avoid: "" } });
+  render();
+  const n = $("#newslot input.name"); if (n) { n.focus(); n.scrollIntoView({ block: "nearest" }); }
+};
+
+async function approve(t, yes) {
+  try { accept(await api("/api/approve", { name: t.name, base: t.hash, approved: yes })); toast(yes ? "Approved " + t.name : t.name + " is back to review"); }
+  catch (err) { if (err.status === 409) { await load(); toast(t.name + " changed in GLOSSARY.md; read it again before approving"); } else toast(err.message); }
+}
+
+async function approveMany(list) {
+  let snap = null, failed = 0;
+  for (const t of list) {
+    try { snap = await api("/api/approve", { name: t.name, base: t.hash, approved: true }); } catch { failed++; }
+  }
+  if (snap) accept(snap); else await load();
+  toast(failed ? `${failed} changed on disk and stay to review` : `Approved ${list.length}`);
+}
+
+function thread(t) {
+  const box = document.createElement("div");
+  box.className = "thread";
+  const resolved = t.comments.filter(c => c.resolved);
+  // A resolved comment stays in view while the agent's answer to it is open, so the answer keeps its question.
+  const answered = (c, i) => { const a = t.comments.slice(i + 1).find(x => x.by === "agent"); return c.by === "user" && a && !a.resolved; };
+  const visible = showResolved.has(t.name) ? t.comments : t.comments.filter((c, i) => !c.resolved || answered(c, i));
+  const hidden = t.comments.length - visible.length;
+  for (const c of visible) {
+    const d = document.createElement("div");
+    d.className = "comment " + c.by + (c.resolved ? " resolved" : "");
+    const resolveTip = c.resolved ? "Reopen" : c.by === "agent" ? "Mark the answer as read" : "Resolve";
+    d.innerHTML = `<div class="meta"><b>${c.by === "agent" ? "Agent" : "You"}</b><span>${esc(when(c.at))}</span>
+        <span class="acts">${ibtn(c.resolved ? "back" : "check", resolveTip, 'data-act="resolve"', "small")}${ibtn("trash", "Delete the comment", 'data-act="remove"', "small")}</span>
+        </div><div class="text">${esc(c.text)}</div>`;
+    d.addEventListener("click", async e => {
+      const b = e.target.closest("button[data-act]"); if (!b) return;
+      try { accept(await api("/api/resolve", b.dataset.act === "remove" ? { id: c.id, delete: true } : { id: c.id, resolved: !c.resolved })); }
+      catch (err) { toast(err.message); }
+    });
+    box.appendChild(d);
+  }
+  if (hidden || showResolved.has(t.name) && resolved.length) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "toggle-resolved";
+    b.textContent = showResolved.has(t.name) ? "Hide resolved" : `Show ${hidden} resolved`;
+    b.onclick = () => { showResolved.has(t.name) ? showResolved.delete(t.name) : showResolved.add(t.name); render(); };
+    box.appendChild(b);
+  }
+  const f = document.createElement("form");
+  f.innerHTML = `<textarea rows="1" placeholder="Comment for the agent on ${esc(t.name)}" aria-label="New comment"></textarea>
+    <button class="ibtn boxed" type="submit" aria-label="Send to the agent" data-tip="Send to the agent" data-keys="${MOD} ↵">${icon("send")}</button>`;
+  const ta = $("textarea", f);
+  const draftKey = "glossary.draft:" + t.name;
+  ta.value = store.get(draftKey, "");
+  ta.addEventListener("input", () => store.set(draftKey, ta.value));
+  ta.addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); f.requestSubmit(); } });
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!ta.value.trim()) return;
+    try { const snap = await api("/api/comment", { term: t.name, text: ta.value }); store.set(draftKey, ""); openThreads.add(t.name); accept(snap); toast("Comment added"); }
+    catch (err) { toast(err.message); }
+  });
+  box.appendChild(f);
+  return box;
+}
+
+/* ---------- controls ---------- */
+$("#filter").addEventListener("click", e => {
+  const b = e.target.closest("button[data-filter]"); if (!b) return;
+  filter = b.dataset.filter; store.set("glossary.filter", filter); render();
+});
+filter = store.get("glossary.filter", "all");
+view = store.get("glossary.view", "letter");
+$("#view").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]"); if (!b) return;
+  view = b.dataset.view; store.set("glossary.view", view); render();
+});
+$("#search").addEventListener("input", e => { query = e.target.value.trim(); render(); });
+// Shortcuts outside text fields: / searches, N adds a term, E edits the term under the pointer or holding the focus.
+let hovered = null;
+$("#list").addEventListener("pointerover", e => { hovered = e.target.closest("article.term"); });
+$("#list").addEventListener("pointerleave", () => { hovered = null; });
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  const key = e.key.toLowerCase();
+  if (key === "/") { e.preventDefault(); $("#search").focus(); }
+  if (key === "n") { e.preventDefault(); $("#add").click(); }
+  if (key === "e") {
+    const card = document.activeElement.closest("article.term") || (hovered && hovered.isConnected ? hovered : null);
+    if (card && card.edit) { e.preventDefault(); hideTip(); card.edit(); }
+  }
+});
+
+load().catch(err => notice("Could not load the glossary: " + err.message));
+</script>
+</body>
+</html>
