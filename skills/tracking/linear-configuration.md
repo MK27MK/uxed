@@ -17,7 +17,7 @@ The claude.ai Linear connector is tied to a single workspace: `whoami` says whic
 4. **Declare the tracker.** In the project's `.kulmine/config.json`:
 
    ```json
-   {"language": "en", "tracker": {"kind": "linear", "team": "<KEY>"}}
+   {"tracker": {"kind": "linear", "team": "<KEY>"}}
    ```
 
    `list_teams` on the new server gives the team's key; `list_issue_statuses` and `list_issue_labels` say which states and type labels `kulmine:tracking` will use.

@@ -37,9 +37,9 @@ To work on it: [CONTRIBUTING.md](CONTRIBUTING.md).
 `.kulmine/config.json` in the project, all optional:
 
 ```json
-{"language": "en", "tracker": {"kind": "linear", "team": "ENG"}}
+{"language": {"tracker": "en", "work": "en", "chat": "adaptive"}, "tracker": {"kind": "linear", "team": "ENG"}}
 ```
 
-`language` is the language of issues and pages (default English). With `tracker`, work pages live in the issues; without it, they stay in `.kulmine/pages/`.
+`language` has three parts: `tracker` for issues (default English), `work` for what gets committed, code, docs, commits and PRs (default English), `chat` for the chat, pages and Artifacts (default `adaptive`, the language of the user's last message). Each takes a language code; the old single string still works and sets `tracker` and `work`. With `tracker`, work pages live in the issues; without it, they stay in `.kulmine/pages/`.
 
 Set `KULMINE_STYLE=off` in the environment to silence the style hooks.

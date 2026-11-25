@@ -54,13 +54,27 @@ class PathTest(unittest.TestCase):
 class ConfigTest(unittest.TestCase):
     def test_defaults_without_file(self):
         with tempfile.TemporaryDirectory() as d:
-            self.assertEqual(pages.config(Path(d)), {"language": "en", "tracker": None})
+            self.assertEqual(pages.config(Path(d)), {"language": {"tracker": "en", "work": "en", "chat": "adaptive"},
+                                                     "tracker": None})
 
     def test_file_overrides_defaults(self):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / ".kulmine").mkdir()
+            (Path(d) / ".kulmine/config.json").write_text('{"language": {"chat": "it"}}')
+            self.assertEqual(pages.config(Path(d))["language"], {"tracker": "en", "work": "en", "chat": "it"})
+
+    def test_old_string_language_sets_tracker_and_work(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / ".kulmine").mkdir()
             (Path(d) / ".kulmine/config.json").write_text('{"language": "it"}')
-            self.assertEqual(pages.config(Path(d)), {"language": "it", "tracker": None})
+            self.assertEqual(pages.config(Path(d))["language"], {"tracker": "it", "work": "it", "chat": "adaptive"})
+
+    def test_unknown_language_key_is_an_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / ".kulmine").mkdir()
+            (Path(d) / ".kulmine/config.json").write_text('{"language": {"issues": "it"}}')
+            with self.assertRaises(ValueError):
+                pages.config(Path(d))
 
     def test_incomplete_tracker_is_an_error(self):
         with tempfile.TemporaryDirectory() as d:

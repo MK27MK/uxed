@@ -3,7 +3,8 @@
 
     pages.py path <type> <name> [--root DIR]   print .kulmine/pages/<type>/<name>.html and create the folder
     pages.py config [--root DIR]               print the project configuration (.kulmine/config.json) as JSON,
-                                               with defaults: {"language": "en", "tracker": null}
+                                               with defaults: {"language": {"tracker": "en", "work": "en",
+                                               "chat": "adaptive"}, "tracker": null}
     pages.py inline <file>                     put the component in place of <!-- kulmine:component -->,
                                                or update the one already there
 
@@ -21,7 +22,8 @@ COMPONENT = Path(__file__).resolve().parents[1] / "component.html"
 PLACEHOLDER = "<!-- kulmine:component -->"
 BLOCK = re.compile(r"<!-- kulmine:component:start -->.*?<!-- kulmine:component:end -->", re.S)
 SLUG = re.compile(r"[^a-z0-9]+")
-DEFAULTS = {"language": "en", "tracker": None}
+LANGUAGES = {"tracker": "en", "work": "en", "chat": "adaptive"}
+DEFAULTS = {"language": LANGUAGES, "tracker": None}
 
 
 def slug(text: str) -> str:
@@ -37,7 +39,19 @@ def config(root: Path) -> dict:
     tracker = data.get("tracker")
     if tracker is not None and not (isinstance(tracker, dict) and tracker.get("kind") and tracker.get("team")):
         raise ValueError(f'{file}: "tracker" needs at least "kind" and "team", for example {{"kind": "linear", "team": "ENG"}}')
-    return {**DEFAULTS, **data}
+    return {**DEFAULTS, **data, "language": languages(data.get("language"), file)}
+
+
+def languages(value, file: Path) -> dict:
+    """The three languages over their defaults. A bare string is the old single setting: issues and work, not chat."""
+    if value is None:
+        value = {}
+    elif isinstance(value, str):
+        value = {"tracker": value, "work": value}
+    if not isinstance(value, dict) or set(value) - set(LANGUAGES) or not all(isinstance(v, str) and v for v in value.values()):
+        raise ValueError(f'{file}: "language" takes {", ".join(LANGUAGES)} as language codes, for example '
+                         f'{{"tracker": "en", "work": "en", "chat": "adaptive"}}')
+    return {**LANGUAGES, **value}
 
 
 def page_path(root: Path, kind: str, name: str) -> Path:

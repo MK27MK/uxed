@@ -9,6 +9,9 @@ in the system prompt even after compaction. This script carries it where the out
 - `UserPromptSubmit`: on every user message injects the thesis, the style's first paragraph, so the rules stay close
   to the reply they govern and the thesis cannot drift from the text.
 
+Both events also carry the project's three languages (`language` in `.kulmine/config.json`, read by `pages.py`), so
+the agent writes issues, committed work and chat each in its own.
+
 Silent with `KULMINE_STYLE=off`.
 """
 
@@ -17,7 +20,10 @@ import os
 import sys
 from pathlib import Path
 
-TEXT = Path(__file__).resolve().parents[2] / "output-styles" / "kulmine.md"
+ROOT = Path(__file__).resolve().parents[2]
+TEXT = ROOT / "output-styles" / "kulmine.md"
+sys.path.insert(0, str(ROOT / "skills" / "pages" / "scripts"))
+import pages  # noqa: E402
 EVENTS = {"SubagentStart", "UserPromptSubmit"}
 
 
@@ -36,23 +42,43 @@ def thesis(text: str) -> str:
     return paragraphs[0] if paragraphs else ""
 
 
-def context(event: str, text: str) -> str:
+def project(start: Path) -> Path:
+    """The nearest folder, from `start` upwards, with `.kulmine/config.json`; `start` itself when there is none."""
+    for folder in (start, *start.parents):
+        if (folder / ".kulmine" / "config.json").is_file():
+            return folder
+    return start
+
+
+def languages(cwd: Path) -> str:
+    try:
+        lang = pages.config(project(cwd))["language"]
+    except (OSError, ValueError):
+        lang = pages.LANGUAGES
+    chat = "the language of the user's last message" if lang["chat"] == "adaptive" else f'`{lang["chat"]}`'
+    return (f"Languages: chat, pages and Artifacts in {chat}; issue tracker (titles, descriptions, comments) in "
+            f'`{lang["tracker"]}`; produced work (code, comments, docs, commits, PRs) in `{lang["work"]}`.')
+
+
+def context(event: str, text: str, cwd: Path) -> str:
     if event == "UserPromptSubmit":
-        return "kulmine style active. " + thesis(text)
-    return text.strip()
+        return "kulmine style active. " + thesis(text) + "\n\n" + languages(cwd)
+    return text.strip() + "\n\n" + languages(cwd)
 
 
 def main() -> None:
     if os.environ.get("KULMINE_STYLE") == "off":
         return
     try:
-        event = json.load(sys.stdin).get("hook_event_name", "")
+        payload = json.load(sys.stdin)
+        event = payload.get("hook_event_name", "")
+        cwd = Path(payload.get("cwd") or os.getcwd())
         text = body(TEXT.read_text(encoding="utf-8"))
     except (OSError, ValueError, AttributeError):
         return
     if event not in EVENTS:
         return
-    out = {"hookSpecificOutput": {"hookEventName": event, "additionalContext": context(event, text)}}
+    out = {"hookSpecificOutput": {"hookEventName": event, "additionalContext": context(event, text, cwd)}}
     print(json.dumps(out, ensure_ascii=False))
 
 
