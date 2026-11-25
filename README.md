@@ -3,7 +3,7 @@
 <p align="center">
   <img src="docs/images/wanderer-above-the-sea-of-fog.jpg" alt="Wanderer above the Sea of Fog by Caspar David Friedrich: a man in a dark coat stands on a rocky summit, his back to the viewer, looking out over a sea of fog" width="420">
   <br>
-  <sub><i>Wanderer above the Sea of Fog</i>, Caspar David Friedrich, c. 1818. Public domain, via <a href="https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg">Wikimedia Commons</a>.</sub>
+  <sub><i>Wanderer above the Sea of Fog</i>, Caspar David Friedrich, c. 1818.</sub>
 </p>
 
 <blockquote>
