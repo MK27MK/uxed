@@ -12,11 +12,11 @@ It follows the method of Thariq ([@trq212](https://x.com/trq212)), from the Clau
 
 - **Style**: one sentence in chat. Everything else is a page published as an Artifact, which lives in its issue tracker issue or, without a tracker, in `.kulmine/pages/`: you choose on it with cards and chips, and your choices go back to the agent.
 - **Hooks**: send back a chat message longer than one sentence, block edits to Claude Code configuration until the session has read the docs, and, in a project with a tracker, make every piece of work start from its issue.
-- **Skills**: `interview-me` (questions that become a spec), `teaching` (what you don't know you don't know), `prototyping` (options to see and pick), `researching`, `tracking` (Linear issues with imperative titles), `domain-modeling` (the `GLOSSARY.md`), `orchestrate`, `analyzing-sessions`, and [`building-ui`](skills/building-ui/README.md) (design and change UI through an interactive shell, over a mock or the running app, then implement it test-first).
+- **Skills**: `interview-me` (questions that become a spec), `teaching` (what you don't know you don't know), `prototyping` (options to see and pick), `researching`, `tracking` (Linear issues with imperative titles), `domain-modeling` (the `GLOSSARY.md`), `orchestrate` and `analyzing-sessions`.
 
 ## Installation
 
-You need Claude Code, `git` and `python3` ≥ 3.9 (and Node ≥ 20 for `building-ui`).
+You need Claude Code, `git` and `python3` ≥ 3.9.
 
 ```bash
 claude plugin marketplace add MK27MK/kulmine
@@ -43,7 +43,3 @@ To work on it: [CONTRIBUTING.md](CONTRIBUTING.md).
 `language` is the language of issues and pages (default English). With `tracker`, work pages live in the issues; without it, they stay in `.kulmine/pages/`.
 
 Set `KULMINE_STYLE=off` in the environment to silence the style hooks.
-
-## Examples
-
-- [Strategy search](examples/mock-palette/README.md): a component mocked from three sketches and a spec with `building-ui`'s mock mode.

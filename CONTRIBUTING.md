@@ -38,12 +38,6 @@ In `skills/analyzing-sessions/scripts`, `skills/domain-modeling/scripts` and `sk
 python3 -I -m unittest discover -p 'test_*.py'
 ```
 
-In `skills/building-ui/scripts` (Node ≥ 20; the reload tests watch files and open a local port, which the sandbox blocks):
-
-```bash
-node --test
-```
-
 The glossary tests open a port on `127.0.0.1`, which the Claude Code sandbox blocks unless `sandbox.network.allowLocalBinding` is true.
 
 ## Projects that vendor kulmine

@@ -1,6 +1,6 @@
 {
   "name": "kulmine",
-  "description": "Wakes the agent up: the kulmine style, repeated on every message, replaces its learned defaults (agreeing with you, adding things nobody asked for, obeying the last message, deciding for the user, grading its own work) and makes it answer with HTML pages instead of walls of text. Adds skills for interviews that become specs, lessons on unknown unknowns, prototypes, designing UI over a mock or the running app, research, orchestration, and turning the user's corrections into harness changes.",
+  "description": "Wakes the agent up: the kulmine style, repeated on every message, replaces its learned defaults (agreeing with you, adding things nobody asked for, obeying the last message, deciding for the user, grading its own work) and makes it answer with HTML pages instead of walls of text. Adds skills for interviews that become specs, lessons on unknown unknowns, prototypes, research, orchestration, and turning the user's corrections into harness changes.",
   "author": {
     "name": "kulmine contributors"
   },
@@ -10,10 +10,7 @@
     "html",
     "artifacts",
     "skills",
-    "hooks",
-    "ui",
-    "mock",
-    "design"
+    "hooks"
   ],
   "types": "./types/index.d.ts"
 }
